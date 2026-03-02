@@ -1,10 +1,10 @@
-package com.job.service;
+package com.yuliyuli.service;
 
 import java.util.Date;
 
-import com.job.dto.User;
-import com.job.dto.UserInfo;
-import com.job.vo.LoginVO;
+import com.yuliyuli.dto.User;
+import com.yuliyuli.vo.LoginVO;
+import com.yuliyuli.vo.UpdateUserInfoVO;
 
 public interface UserService {
     /**
@@ -37,5 +37,5 @@ public interface UserService {
      * @param sign 签名
      * @return 用户信息
      */
-    UserInfo modifyInfo(short gender, Date birthday,String sign);
+    UpdateUserInfoVO modifyInfo(short gender, Date birthday,String sign);
 }

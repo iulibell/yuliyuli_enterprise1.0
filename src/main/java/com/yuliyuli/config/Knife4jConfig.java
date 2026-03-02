@@ -1,4 +1,4 @@
-package com.job.config;
+package com.yuliyuli.config;
 
 import io.swagger.annotations.Api;
 import org.springframework.context.annotation.Bean;

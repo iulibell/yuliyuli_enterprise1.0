@@ -1,4 +1,4 @@
-package com.job.dto;
+package com.yuliyuli.dto;
 
 public class UserHolder {
     private static final ThreadLocal<User> USER_HOLDER = new ThreadLocal<>();

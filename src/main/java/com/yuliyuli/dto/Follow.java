@@ -1,4 +1,4 @@
-package com.job.dto;
+package com.yuliyuli.dto;
 
 import lombok.Data;
 import com.baomidou.mybatisplus.annotation.TableName;

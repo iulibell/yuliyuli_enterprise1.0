@@ -1,6 +1,7 @@
-package com.job.vo;
+package com.yuliyuli.vo;
 
-import com.job.dto.User;
+import com.yuliyuli.dto.User;
+
 import lombok.Data;
 
 @Data

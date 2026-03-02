@@ -1,7 +1,7 @@
-package com.job.mapper;
+package com.yuliyuli.mapper;
 
 import com.baomidou.mybatisplus.core.mapper.BaseMapper;
-import com.job.dto.User;
+import com.yuliyuli.dto.User;
 
 import org.apache.ibatis.annotations.Mapper;
 

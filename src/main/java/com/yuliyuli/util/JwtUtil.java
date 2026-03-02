@@ -1,4 +1,4 @@
-package com.job.util;
+package com.yuliyuli.util;
 
 import org.springframework.stereotype.Component;
 

@@ -1,8 +1,10 @@
-package com.job.mapper;
+package com.yuliyuli.mapper;
 
 import com.baomidou.mybatisplus.core.mapper.BaseMapper;
-import com.job.dto.UserInfo;
+import com.yuliyuli.dto.UserInfo;
 
+import org.apache.ibatis.annotations.Mapper;
+
+@Mapper
 public interface UserInfoMapper extends BaseMapper<UserInfo> {
-    
 }

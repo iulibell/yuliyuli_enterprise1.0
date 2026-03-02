@@ -1,29 +1,37 @@
-package com.job.config;
+package com.yuliyuli.config;
 
 import org.springframework.context.annotation.Configuration;
 import org.springframework.web.servlet.config.annotation.InterceptorRegistry;
 import org.springframework.web.servlet.config.annotation.WebMvcConfigurer;
 
-import com.job.filter.LoginIntercepter;
+import com.yuliyuli.filter.LoginInterceptor;
 
 @Configuration
 public class WebConfig implements WebMvcConfigurer {
-    private final LoginIntercepter loginIntercepter;
 
-    public WebConfig(LoginIntercepter loginIntercepter) {
-        this.loginIntercepter = loginIntercepter;
+    private static final String[] EXCLUDE_PATH_PATTERNS = {
+            // 1. 用户模块公开接口（登录/注册）
+            "/user/login", "/user/register",
+            // 2. 视频/评论模块公开接口
+            "/video/list", "/video/detail", "/comment/list",
+            // 3. Knife4j接口文档路径（开发环境必备）
+            "/doc.html", "/webjars/**", "/swagger-resources/**", "/v2/api-docs/**",
+            // 4. 其他静态资源（可选，若有前端静态文件需放行）
+            "/static/**", "/favicon.ico"
+    };
+
+    private final LoginInterceptor loginInterceptor;
+
+    public WebConfig(LoginInterceptor loginInterceptor) {
+        this.loginInterceptor = loginInterceptor;
     }
 
     @Override
     public void addInterceptors(InterceptorRegistry registry) {
-        registry.addInterceptor(loginIntercepter)
+        registry.addInterceptor(loginInterceptor)
                 .addPathPatterns("/**")
                 .excludePathPatterns(
-                    "/login", 
-                    "/register",
-                    "/video/list",
-                    "/video/detail",
-                    "/comment/list"
+                    EXCLUDE_PATH_PATTERNS
                 );
     }
 }
