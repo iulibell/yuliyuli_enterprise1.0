@@ -1,21 +1,26 @@
 package com.job.service.impl;
 
+import java.util.Date;
+
 import org.springframework.stereotype.Service;
 import org.springframework.security.crypto.password.PasswordEncoder;
 
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
-import com.job.common.Wrapper;
-
 import com.job.dto.User;
+import com.job.dto.UserHolder;
 import com.job.dto.UserInfo;
 import com.job.dto.ExistPhone;
 import com.job.vo.LoginVO;
+import com.job.vo.UpdateUserInfoVO;
 
 import com.job.service.UserService;
 import org.springframework.data.redis.core.RedisTemplate;
 import com.job.util.JwtUtil;
+import com.job.util.WrapperUtil;
 import com.job.mapper.UserMapper;
 import com.job.mapper.ExistPhoneMapper;
+import com.job.mapper.UserInfoMapper;
+
 import java.util.concurrent.TimeUnit;
 import java.util.UUID;
 
@@ -26,6 +31,9 @@ public class UserServiceImpl implements UserService {
 
     @Autowired
     private UserMapper userMapper;
+
+    @Autowired
+    private UserInfoMapper userInfoMapper;
 
     @Autowired
     private PasswordEncoder passwordEncoder;
@@ -43,7 +51,7 @@ public class UserServiceImpl implements UserService {
     String username = "";
 
     public LoginVO login(String account, String password) {
-        Wrapper wrapper = new Wrapper();
+        WrapperUtil wrapper = new WrapperUtil();
         LambdaQueryWrapper<User> queryWrapper = wrapper.findAccount(account);
         User user = userMapper.selectOne(queryWrapper);
         if (user == null) {
@@ -64,7 +72,7 @@ public class UserServiceImpl implements UserService {
 
     @Override
     public String getCode(String phone) {
-        Wrapper wrapper = new Wrapper();
+        WrapperUtil wrapper = new WrapperUtil();
         LambdaQueryWrapper<ExistPhone> queryWrapper = wrapper.findPhone(phone);
         ExistPhone existPhone = existPhoneMapper.selectOne(queryWrapper);
         if (existPhone == null) {
@@ -91,6 +99,29 @@ public class UserServiceImpl implements UserService {
         user.setPassword(passwordEncoder.encode(password));
         user.setUsername(username);
         userMapper.insert(user);
+        UserInfo userInfo = new UserInfo();
+        userInfo.setUserId(userId);
+        userInfoMapper.insert(userInfo);
         return user;
+    }
+
+    @Override
+    public UpdateUserInfoVO modifyInfo(short gender, Date birthday, String sign) {
+        // 从 UserHolder 获取当前登录用户
+        User user = UserHolder.getUser();
+        Long userId = user.getUserId();
+        WrapperUtil wrapper = new WrapperUtil();
+        LambdaQueryWrapper<UserInfo> queryWrapper = wrapper.findUserInfoByUserId(userId);
+        UserInfo userInfo = userInfoMapper.selectOne(queryWrapper);
+        LambdaQueryWrapper<UserInfo> updateQueryWrapper = wrapper.updateUserInfoByUserId(userId);
+        userInfo.setGender(gender);
+        userInfo.setBirthday(birthday);
+        userInfo.setSign(sign);
+        userInfoMapper.update(userInfo, updateQueryWrapper);
+        UpdateUserInfoVO updateUserInfoVO = new UpdateUserInfoVO();
+        updateUserInfoVO.setGender(gender);
+        updateUserInfoVO.setBirthday(birthday);
+        updateUserInfoVO.setSign(sign);
+        return updateUserInfoVO;
     }
 }

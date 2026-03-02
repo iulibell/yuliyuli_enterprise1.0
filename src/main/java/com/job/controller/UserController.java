@@ -15,6 +15,7 @@ import com.job.common.Result;
 import com.job.service.UserService;
 import com.job.util.JwtUtil;
 import com.job.vo.LoginVO;
+import com.job.vo.UpdateUserInfoVO;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -74,13 +75,13 @@ public class UserController {
     @RequestMapping("/modifyInfo")
     public Result<Object> modifyInfo(@Validated @RequestBody UserInfo userInfoDto) {
         // 修改用户信息
-        UserInfo userInfo = userService.modifyInfo(
+        UpdateUserInfoVO updateUserInfoVO = userService.modifyInfo(
             userInfoDto.getGender(),
             userInfoDto.getBirthday(),
             userInfoDto.getSign());
-        if (userInfo == null) {
+        if (updateUserInfoVO == null) {
             return Result.fail("修改失败!");
         }
-        return Result.success(userInfo);
+        return Result.success(updateUserInfoVO);
     }
 }
