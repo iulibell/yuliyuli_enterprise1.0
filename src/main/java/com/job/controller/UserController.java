@@ -10,9 +10,11 @@ import org.springframework.web.bind.annotation.RequestBody;
 
 import com.job.dto.User;
 import com.job.dto.ExistPhone;
+import com.job.dto.UserInfo;
 import com.job.common.Result;
 import com.job.service.UserService;
 import com.job.util.JwtUtil;
+import com.job.vo.LoginVO;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -33,16 +35,16 @@ public class UserController {
     public Result<Object> login(@Validated @RequestBody User loginDto) {
 
         //查询用户账号
-        User user = userService.login(loginDto.getAccount(), loginDto.getPassword());
-        if (user == null) {
+        LoginVO loginVO = userService.login(loginDto.getAccount(), loginDto.getPassword());
+        if (loginVO == null) {
             return Result.fail("账号或密码错误!");
         }
 
         // 生成token
-        String token = jwtUtil.generateToken(user.getUserId());
+        String token = jwtUtil.generateToken(loginVO.getUser().getUserId());
         Map<String, Object> map = new HashMap<>();
         map.put("token", token);
-        map.put("user", user);
+        map.put("user", loginVO.getUser());
         return Result.success(map);
     }
 
@@ -66,5 +68,19 @@ public class UserController {
             return Result.fail("验证码错误!");
         }
         return Result.success(user);
+    }
+
+    @ApiOperation("修改模块")
+    @RequestMapping("/modifyInfo")
+    public Result<Object> modifyInfo(@Validated @RequestBody UserInfo userInfoDto) {
+        // 修改用户信息
+        UserInfo userInfo = userService.modifyInfo(
+            userInfoDto.getGender(),
+            userInfoDto.getBirthday(),
+            userInfoDto.getSign());
+        if (userInfo == null) {
+            return Result.fail("修改失败!");
+        }
+        return Result.success(userInfo);
     }
 }

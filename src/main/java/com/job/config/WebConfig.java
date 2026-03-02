@@ -1,21 +1,22 @@
 package com.job.config;
 
-import com.job.util.JwtIntercepter;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.web.servlet.config.annotation.InterceptorRegistry;
 import org.springframework.web.servlet.config.annotation.WebMvcConfigurer;
 
+import com.job.filter.LoginIntercepter;
+
 @Configuration
 public class WebConfig implements WebMvcConfigurer {
-    private final JwtIntercepter jwtIntercepter;
+    private final LoginIntercepter loginIntercepter;
 
-    public WebConfig(JwtIntercepter jwtIntercepter) {
-        this.jwtIntercepter = jwtIntercepter;
+    public WebConfig(LoginIntercepter loginIntercepter) {
+        this.loginIntercepter = loginIntercepter;
     }
 
     @Override
     public void addInterceptors(InterceptorRegistry registry) {
-        registry.addInterceptor(jwtIntercepter)
+        registry.addInterceptor(loginIntercepter)
                 .addPathPatterns("/**")
                 .excludePathPatterns(
                     "/login", 

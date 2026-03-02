@@ -1,6 +1,10 @@
 package com.job.service;
 
+import java.util.Date;
+
 import com.job.dto.User;
+import com.job.dto.UserInfo;
+import com.job.vo.LoginVO;
 
 public interface UserService {
     /**
@@ -9,7 +13,7 @@ public interface UserService {
      * @param password 密码
      * @return 用户信息
      */
-    User login(String account, String password);
+    LoginVO login(String account, String password);
     
     /**
      * 注册
@@ -25,4 +29,13 @@ public interface UserService {
      * @return 用户信息
      */
     User register(String account, String code ,String password);
+
+    /**
+     * 修改信息
+     * @param gender 性别
+     * @param birthday 生日
+     * @param sign 签名
+     * @return 用户信息
+     */
+    UserInfo modifyInfo(short gender, Date birthday,String sign);
 }

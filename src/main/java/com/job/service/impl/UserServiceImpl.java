@@ -7,11 +7,17 @@ import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.job.common.Wrapper;
 
 import com.job.dto.User;
+import com.job.dto.UserInfo;
 import com.job.dto.ExistPhone;
+import com.job.vo.LoginVO;
 
 import com.job.service.UserService;
+import org.springframework.data.redis.core.RedisTemplate;
+import com.job.util.JwtUtil;
 import com.job.mapper.UserMapper;
 import com.job.mapper.ExistPhoneMapper;
+import java.util.concurrent.TimeUnit;
+import java.util.UUID;
 
 import org.springframework.beans.factory.annotation.Autowired;
 
@@ -27,21 +33,33 @@ public class UserServiceImpl implements UserService {
     @Autowired
     private ExistPhoneMapper existPhoneMapper;
 
+    @Autowired
+    private RedisTemplate<String, Object> redisTemplate;
+
+    private JwtUtil jwtUtil;
+
     // 用于判断输入时的验证码是否正确
     String registerCode = "";
     String username = "";
 
-    public User login(String account, String password) {
+    public LoginVO login(String account, String password) {
         Wrapper wrapper = new Wrapper();
         LambdaQueryWrapper<User> queryWrapper = wrapper.findAccount(account);
         User user = userMapper.selectOne(queryWrapper);
         if (user == null) {
             return null;
         }
+        String token = jwtUtil.generateToken(user.getUserId());
+        String redisKey = "login:token:" + token;
+        // 保存用户信息到 Redis
+        redisTemplate.opsForValue().set(redisKey, user, 1, TimeUnit.HOURS);
         if (!passwordEncoder.matches(password, user.getPassword())) {
             return null;
         }
-        return user;
+        LoginVO loginVO = new LoginVO();
+        loginVO.setToken(token);
+        loginVO.setUser(user);
+        return loginVO;
     }
 
     @Override
@@ -67,6 +85,8 @@ public class UserServiceImpl implements UserService {
         }
         // 注册用户
         User user = new User();
+        Long userId = Long.parseLong(UUID.randomUUID().toString().replace("-", "").substring(0, 13));
+        user.setUserId(userId);
         user.setAccount(account);
         user.setPassword(passwordEncoder.encode(password));
         user.setUsername(username);

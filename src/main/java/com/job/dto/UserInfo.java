@@ -5,6 +5,7 @@ import com.baomidou.mybatisplus.annotation.TableName;
 import com.baomidou.mybatisplus.annotation.TableId;
 import com.baomidou.mybatisplus.annotation.IdType;
 import io.swagger.v3.oas.annotations.Parameter;
+import io.swagger.v3.oas.annotations.media.Schema;
 import java.util.Date;
 
 @Data
@@ -17,6 +18,7 @@ public class UserInfo {
     private Long userId;
     
     @Parameter(name = "性别")
+    @Schema(description = "0未知,1男,2女")
     private short gender;
     
     @Parameter(name = "生日")
