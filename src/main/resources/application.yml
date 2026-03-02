@@ -1,0 +1,7 @@
+server:
+  port: 8081
+spring:
+  data:
+    redis:
+      port: 6371
+      host: localhost
