@@ -4,4 +4,22 @@ spring:
   data:
     redis:
       port: 6371
-      host: localhost
+      host: localhost    
+  servlet:
+    multipart:
+      max-file-size: 16GB
+      max-request-size: 16GB
+      location: static/videoUrl   
+  rabbitmq:
+    host: localhost
+    port: 5672
+    username: guest
+    password: guest
+    listener:
+      simple:
+        retry:
+          enabled: true
+          max-retries: 3
+          initial-interval: 1000
+          multiplier: 2.0
+

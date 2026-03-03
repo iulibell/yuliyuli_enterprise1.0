@@ -17,10 +17,10 @@ public class Video {
     @TableId(type = IdType.AUTO)
     private Long id;
     
+    @NotBlank(message = "视频用户id不能为空")
     @Parameter(name = "视频所属用户id")
     private Long userId;
-    
-    @NotBlank(message = "视频标题不能为空")
+
     @Size(min = 10, max = 100, message = "视频标题长度必须在10到100之间")
     @Parameter(name = "视频标题")
     private String title;
