@@ -7,20 +7,27 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
-import com.yuliyuli.common.RateLimit;
+import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
+import com.yuliyuli.annotation.RateLimit;
 import com.yuliyuli.common.Result;
-import com.yuliyuli.dto.User;
-import com.yuliyuli.dto.UserHolder;
-import com.yuliyuli.dto.VideoCollection;
-import com.yuliyuli.dto.VideoDelivery;
-import com.yuliyuli.dto.VideoLike;
+import com.yuliyuli.entity.Comment;
+import com.yuliyuli.entity.User;
+import com.yuliyuli.entity.UserHolder;
+import com.yuliyuli.entity.VideoCollection;
+import com.yuliyuli.entity.VideoDelivery;
+import com.yuliyuli.entity.VideoLike;
 import com.yuliyuli.exception.GlobalExceptionHandler;
 import com.yuliyuli.service.VideoService;
+import com.yuliyuli.vo.VideoVO;
 
 import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiOperation;
 import io.swagger.annotations.ApiParam;
+import io.swagger.v3.oas.annotations.Parameter;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.RequestParam;
+
 
 @RestController
 @RequestMapping("/video")
@@ -45,7 +52,7 @@ public class VideoController {
         @Validated @RequestBody VideoDelivery video) {
             checkLogin();
         try{
-            videoService.videoDiliver(video);
+            videoService.videoDeliver(video);
             log.info("视频投递成功,视频ID:{}", video.getVideo().getUrl());
         }catch(Exception e){
             log.error("视频投递失败", e);
@@ -84,5 +91,35 @@ public class VideoController {
             throw new GlobalExceptionHandler.BusinessException("视频收藏失败");
         }
         return Result.success();
+    }
+
+    @RateLimit(limit = 10, window = 60, key = "comment")
+    @PostMapping("/comment")
+    @ApiOperation("视频评论")
+    public Result<Object> postMethodName(@ApiParam(value = "传递的评论对象", required = true)
+        @RequestBody Comment comment) {
+            checkLogin();
+        try{
+            videoService.videoComment(comment);
+            log.info("视频评论成功,视频ID:{},用户ID:{}",comment.getVideoId(),comment.getUserId());
+        }catch(Exception e){
+            log.error("视频评论失败", e);
+            throw new GlobalExceptionHandler.BusinessException("视频评论失败");
+        }
+        return Result.success();
+    }
+
+    @GetMapping("/videoList")
+    public Result<Page<VideoVO>> getVideoList(@Parameter(name ="页码") @RequestParam(defaultValue = "1") 
+        int pageNum, 
+        @Parameter(name = "每页数量") @RequestParam(defaultValue = "10") 
+        int pageSize) {
+        try{
+            Page<VideoVO> page = videoService.getVideoList(pageNum, pageSize);
+            return Result.success(page);
+        }catch(Exception e){
+            log.error("获取视频列表失败", e);
+            throw new GlobalExceptionHandler.BusinessException("获取视频列表失败");
+        }
     }
 }

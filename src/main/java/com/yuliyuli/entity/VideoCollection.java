@@ -1,4 +1,4 @@
-package com.yuliyuli.dto;
+package com.yuliyuli.entity;
 
 import lombok.Data;
 import com.baomidou.mybatisplus.annotation.TableName;
@@ -8,17 +8,17 @@ import io.swagger.v3.oas.annotations.Parameter;
 import java.util.Date;
 
 @Data
-@TableName("follow")
-public class Follow {
+@TableName("video_collection")
+public class VideoCollection {
     @TableId(type = IdType.AUTO)
     private Long id;
     
-    @Parameter(name = "关注用户id")
-    private Long followUserId;
+    @Parameter(name = "视频id")
+    private Long videoId;
     
-    @Parameter(name = "粉丝用户id")
-    private Long fanUserId;
+    @Parameter(name = "用户id")
+    private Long userId;
     
-    @Parameter(name = "关注时间")
+    @Parameter(name = "收藏时间")
     private Date createTime;
 }

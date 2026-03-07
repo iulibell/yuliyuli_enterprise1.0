@@ -6,6 +6,15 @@ import org.springframework.amqp.core.*;
 
 @Configuration
 public class RabbitMqConfig {
+    /**
+     * 视频评论配置（包含死信）
+     */
+    public static final String COMMENT_EXCHANGE_NAME = "comment_exchange";
+    public static final String COMMENT_QUEUE_NAME = "comment_queue";
+    public static final String COMMENT_ROUTING_KEY = "comment_routing_key";
+    public static final String COMMENT_DEAD_EXCHANGE_NAME = "comment_dead_exchange";
+    public static final String COMMENT_DEAD_QUEUE_NAME = "comment_dead_queue";
+    public static final String COMMENT_DEAD_ROUTING_KEY = "comment_dead_routing_key";
 
     /**
      * 视频收藏配置（包含死信）
@@ -148,5 +157,39 @@ public class RabbitMqConfig {
         return BindingBuilder.bind(collectQueue())
                 .to(collectExchange())
                 .with(COLLECT_ROUTING_KEY).noargs();
+    }
+
+    /**
+     * 视频评论配置（包含死信）
+     */
+    @Bean
+    public Queue commentDeadQueue() {
+        return QueueBuilder.durable(COMMENT_DEAD_QUEUE_NAME).build();
+    }
+    @Bean
+    public Exchange commentDeadExchange() {
+        return ExchangeBuilder.directExchange(COMMENT_DEAD_EXCHANGE_NAME).durable(true).build();
+    }
+    @Bean
+    public Binding commentDeadBinding() {
+        return BindingBuilder.bind(commentDeadQueue())
+        .to(commentDeadExchange())
+        .with(COMMENT_DEAD_ROUTING_KEY).noargs();
+    }
+    @Bean
+    public Queue commentQueue() {
+        return QueueBuilder.durable(COMMENT_QUEUE_NAME)
+        .deadLetterExchange(COMMENT_DEAD_EXCHANGE_NAME)
+        .deadLetterRoutingKey(COMMENT_DEAD_ROUTING_KEY).build();
+    }
+    @Bean
+    public Exchange commentExchange() {
+        return ExchangeBuilder.topicExchange(COMMENT_EXCHANGE_NAME).durable(true).build();
+    }
+    @Bean
+    public Binding commentBinding() {
+        return BindingBuilder.bind(commentQueue())
+        .to(commentExchange())
+        .with(COMMENT_ROUTING_KEY).noargs();
     }
 }

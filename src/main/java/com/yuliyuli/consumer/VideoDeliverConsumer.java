@@ -1,6 +1,6 @@
 package com.yuliyuli.consumer;
 
-import java.util.UUID;
+import java.util.Map;
 import java.util.concurrent.TimeUnit;
 
 import org.redisson.api.RLock;
@@ -12,17 +12,18 @@ import org.springframework.stereotype.Component;
 
 import com.rabbitmq.client.Channel;
 import com.yuliyuli.config.RabbitMqConfig;
-import com.yuliyuli.dto.Video;
-import com.yuliyuli.dto.VideoDelivery;
+import com.yuliyuli.entity.Video;
+import com.yuliyuli.entity.VideoDelivery;
 import com.yuliyuli.exception.GlobalExceptionHandler;
 import com.yuliyuli.mapper.VideoMapper;
 import com.yuliyuli.util.TransferUtil;
 
+import cn.ipokerface.snowflake.SnowflakeIdGenerator;
 import lombok.extern.slf4j.Slf4j;
 
 @Component
 @Slf4j
-public class VideoDiliverConsumer {
+public class VideoDeliverConsumer {
 
     @Autowired
     private TransferUtil transferUtil;
@@ -33,55 +34,65 @@ public class VideoDiliverConsumer {
     @Autowired
     private RedissonClient redissonClient;
 
+    @Autowired
+    private SnowflakeIdGenerator snowflakeIdGenerator;
+
     /** 
      * 视频队列消费者
-     * @param videoFromQueue 视频消息
+     * @param videoDelivery 视频消息
      */
     @RabbitListener(queues = RabbitMqConfig.VIDEO_QUEUE_NAME)
-    public void videoConsumer(VideoDelivery videoDilivery, Channel channel, Message mqMessage) throws Exception {
+    public void videoConsumer(VideoDelivery videoDelivery, Channel channel, Message mqMessage) throws Exception {
         long deliveryTag = mqMessage.getMessageProperties().getDeliveryTag();
-        if(videoDilivery == null){
+        if(videoDelivery == null){
             basicReject(channel, deliveryTag);
             return;
         }
 
-        String userId = videoDilivery.getVideo().getUserId().toString();
-        String videoId = UUID.randomUUID().toString();
+        String userId = videoDelivery.getVideo().getUserId().toString();
+        String videoId = String.valueOf(snowflakeIdGenerator.nextId());
 
         // 视频锁，确保每个用户每个视频只插入一次
         String lockKey = "video:lock:" + videoId + ":" + userId;
         RLock lock = redissonClient.getLock(lockKey);
+
+        Map<String, Object> headers = mqMessage.getMessageProperties().getHeaders();
+        int retryCount = headers.containsKey("x-retry-count") ? (int) headers.get("x-retry-count") : 0;
         
         boolean lockSuccess = lock.tryLock(3, 10, TimeUnit.SECONDS);
         if(!lockSuccess){
-            basicAck(channel, deliveryTag);
+            basicNack(deliveryTag, channel, retryCount, headers);
+            log.info("用户{}视频{}锁被其他线程占用,已重新放入队列", userId, videoId);
             return;
         }
         try{
-            videoMapper.insert(videoDilivery.getVideo());
-            
+            videoMapper.insert(videoDelivery.getVideo());
             // 视频文件存储路径
-            String videoPath = transferUtil.saveVideoToDirectory(videoDilivery);
+            String videoPath = transferUtil.saveVideoToDirectory(videoDelivery);   
             if(videoPath == null){
-                basicNack(channel, deliveryTag);
+                channel.basicNack(deliveryTag, false, false);
                 return;
             }
             basicAck(channel, deliveryTag);
         }catch(Exception e){
             //异常，拒绝消息
             try{
-                basicNack(channel, deliveryTag);
+                channel.basicNack(deliveryTag, false, false);
             }catch(Exception e2){
-                log.error("拒绝消息失败", e2);
-                throw new GlobalExceptionHandler.BusinessException("拒绝消息失败");
+                Long userID = videoDelivery.getVideo().getUserId() != null ? videoDelivery.getVideo().getUserId() : 0L;
+                String videoID = videoDelivery.getVideo().getId() != null ? videoDelivery.getVideo().getId().toString() : "";
+                log.error("用户{}视频{}分发失败", userID, videoID);
+                throw new GlobalExceptionHandler.BusinessException("视频分发失败");
             }
         }finally{
                 if(lock.isHeldByCurrentThread() && lock!=null){
                     lock.unlock();
+                    log.info("用户{}视频{}锁已释放", 
+                    userId == null ? null : userId, 
+                    videoId == null ? null : videoId);
                 }
             }
     }
-
     /**
      * 视频死信队列消费者
      * @param video
@@ -116,9 +127,14 @@ public class VideoDiliverConsumer {
         }
     }
 
-    public void basicNack(Channel channel, long deliveryTag){
+    public void basicNack(long deliveryTag, Channel channel, int retryCount, Map<String, Object> headers){
         try{
-            channel.basicNack(deliveryTag, false, true);
+            if(retryCount >= 3){
+                channel.basicNack(deliveryTag, false, false);
+                headers.put("x-retry-count", retryCount + 1);
+            }else{
+                channel.basicNack(deliveryTag, false, true);
+            }
         }catch(Exception e){
             log.error("拒绝消息失败", e);
             throw new GlobalExceptionHandler.BusinessException("NACK消息失败");

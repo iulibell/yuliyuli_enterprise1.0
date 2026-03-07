@@ -7,10 +7,10 @@ import org.springframework.util.StringUtils;
 import org.springframework.security.crypto.password.PasswordEncoder;
 
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
-import com.yuliyuli.dto.ExistPhone;
-import com.yuliyuli.dto.User;
-import com.yuliyuli.dto.UserHolder;
-import com.yuliyuli.dto.UserInfo;
+import com.yuliyuli.entity.ExistPhone;
+import com.yuliyuli.entity.User;
+import com.yuliyuli.entity.UserHolder;
+import com.yuliyuli.entity.UserInfo;
 import com.yuliyuli.exception.GlobalExceptionHandler;
 import com.yuliyuli.mapper.ExistPhoneMapper;
 import com.yuliyuli.mapper.UserInfoMapper;
@@ -58,7 +58,7 @@ public class UserServiceImpl implements UserService {
     // Redis验证码缓存前缀
     private static final String SMS_CODE_PREFIX = "register:code:";
     // 验证码有效期5分钟
-    private static final long SMS_CODE_EXPIRE = 5;
+    private static final long SMS_CODE_EXPIRE = 1;
     // 用户登录缓存前缀
     private static final String LOGIN_TOKEN_PREFIX = "login:token:";
 
@@ -70,6 +70,9 @@ public class UserServiceImpl implements UserService {
         //参数校验
         if(!StringUtils.hasText(account) || !StringUtils.hasText(password)){
             throw new GlobalExceptionHandler.BusinessException("账号或密码不能为空");
+        }
+        if(password.length() < 8 || password.length() > 16){
+            throw new GlobalExceptionHandler.BusinessException("密码长度必须在8到16之间");
         }
         LambdaQueryWrapper<User> queryWrapper = userWrapper.buildUserByAccount(account);
         User user = userMapper.selectOne(queryWrapper);

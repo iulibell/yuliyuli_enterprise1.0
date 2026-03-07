@@ -1,22 +1,20 @@
 package com.yuliyuli.common;
 
+import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Data;
 
+// 统一返回结果类
 @Data
 public class Result<T> {
-    /**
-     * 响应状态码：200-成功，400-参数错误，401-未登录/Token过期，403-无权限，500-服务器内部错误
-     */
+
+    @Schema(description = "响应状态码:200-成功,400-参数错误," +
+    "401-未登录/Token过期,403-无权限,500-服务器内部错误")
     private Integer code;
 
-    /**
-     * 响应提示信息：成功返回"success"，失败返回具体错误信息
-     */
+    @Schema(description = "响应提示信息:成功返回success,失败返回具体错误信息")
     private String msg;
 
-    /**
-     * 响应数据：成功返回业务数据，失败返回null
-     */
+    @Schema(description = "响应数据:成功返回业务数据,失败返回null")
     private T data;
 
     /**

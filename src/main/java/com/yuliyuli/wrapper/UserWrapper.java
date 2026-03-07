@@ -4,17 +4,13 @@ import java.util.Date;
 
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.core.conditions.update.LambdaUpdateWrapper;
-import com.yuliyuli.dto.ExistPhone;
-
-import com.yuliyuli.dto.User;
-import com.yuliyuli.dto.UserInfo; 
+import com.yuliyuli.entity.ExistPhone;
+import com.yuliyuli.entity.User;
+import com.yuliyuli.entity.UserInfo; 
 
 /**
  * 用户相关查询/更新条件构造器接口
  * 统一封装User、UserInfo的MyBatis-Plus条件，避免业务层重复写Wrapper逻辑
- *
- * @author 你的名字
- * @date 2026-03
  */
 public interface UserWrapper {
 

@@ -3,12 +3,12 @@ server:
 spring:
   data:
     redis:
-      port: 6371
-      host: localhost    
+      port: 6379
+      host: localhost        
   servlet:
     multipart:
-      max-file-size: 16GB
-      max-request-size: 16GB
+      max-file-size: 3GB
+      max-request-size: 3GB
       location: static/videoUrl   
   rabbitmq:
     host: localhost
@@ -22,4 +22,6 @@ spring:
           max-retries: 3
           initial-interval: 1000
           multiplier: 2.0
-
+video:
+  upload:
+    path: ./static/videoUrl

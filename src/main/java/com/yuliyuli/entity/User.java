@@ -1,4 +1,4 @@
-package com.yuliyuli.dto;
+package com.yuliyuli.entity;
 
 import lombok.Data;
 import com.baomidou.mybatisplus.annotation.TableName;
@@ -31,7 +31,7 @@ public class User {
     
     @Parameter(name = "密码")
     @NotBlank(message = "密码不能为空")
-    @Size(min = 8, max = 12, message = "密码长度必须在8到12之间")
+    @Size(min = 8, max = 16, message = "密码长度必须在8到12之间")
     private String password;
     
     @Parameter(name = "昵称")

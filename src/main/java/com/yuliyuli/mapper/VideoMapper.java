@@ -1,10 +1,11 @@
 package com.yuliyuli.mapper;
 
 import org.apache.ibatis.annotations.Insert;
+import org.apache.ibatis.annotations.Update;
 
 import com.baomidou.mybatisplus.core.mapper.BaseMapper;
-import com.yuliyuli.dto.Video;
-import com.yuliyuli.dto.VideoLike;
+import com.yuliyuli.entity.Video;
+import com.yuliyuli.entity.VideoLike;
 
 public interface VideoMapper extends BaseMapper<Video> {
 
@@ -25,5 +26,22 @@ public interface VideoMapper extends BaseMapper<Video> {
     @Insert("INSERT INTO video_like (`video_id`,`user_id`)"
     + " VALUES (#{videoId},#{userId})")
     int insertVideoLike(VideoLike videoLike);
-    
+
+    /**
+     * 更新视频点赞数
+     * @param videoId 视频ID
+     * @param likeCount 点赞数
+     * @return 影响行数
+     */
+    @Update("UPDATE video SET like_count = #{likeCount} WHERE url = #{url}")
+    int updateVideoLikeCount(int likeCount, String url);
+
+    /**
+     * 更新视频收藏数
+     * @param videoId 视频ID
+     * @param collectionCount 收藏数
+     * @return 影响行数
+     */
+    @Update("UPDATE video SET collection_count = #{collectionCount} + 1 WHERE url = #{url}")
+    int updateVideoCollectCount(int collectionCount, String url);
 }

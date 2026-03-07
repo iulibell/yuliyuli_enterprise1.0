@@ -5,10 +5,11 @@ import java.io.File;
 import java.nio.file.Files;
 import java.nio.file.StandardCopyOption;
 
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 import org.springframework.util.StringUtils;
 
-import com.yuliyuli.dto.VideoDelivery;
+import com.yuliyuli.entity.VideoDelivery;
 import com.yuliyuli.exception.GlobalExceptionHandler.BusinessException;
 
 import jakarta.annotation.PostConstruct;
@@ -20,7 +21,8 @@ import jakarta.annotation.PostConstruct;
 @Component
 public class TransferUtil {
 
-    private final String TARGETDIR = "static/videoUrl/";
+    @Value("${video.upload.path:./static/videoUrl}")
+    private String TARGETDIR;
 
     // 允许的视频格式
     private static final String[] ALLOWED_VIDEO_EXTENSIONS = {"mp4", "flv", "avi", "mov"};

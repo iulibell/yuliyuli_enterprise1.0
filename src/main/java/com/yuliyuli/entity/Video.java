@@ -1,4 +1,4 @@
-package com.yuliyuli.dto;
+package com.yuliyuli.entity;
 
 import lombok.Data;
 import com.baomidou.mybatisplus.annotation.TableName;
@@ -56,4 +56,10 @@ public class Video {
     
     @Parameter(name = "是否被删除")
     private short isDelete;
+
+    @Parameter(name = "作者昵称")
+    private String authorName;
+
+    @Parameter(name = "评论数量")
+    private int commentCount;
 }

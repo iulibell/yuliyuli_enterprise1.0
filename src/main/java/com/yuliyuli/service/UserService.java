@@ -2,7 +2,7 @@ package com.yuliyuli.service;
 
 import java.util.Date;
 
-import com.yuliyuli.dto.User;
+import com.yuliyuli.entity.User;
 import com.yuliyuli.vo.LoginVO;
 import com.yuliyuli.vo.UpdateUserInfoVO;
 

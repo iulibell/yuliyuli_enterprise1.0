@@ -4,14 +4,15 @@ import com.alibaba.fastjson2.JSON;
 import org.springframework.stereotype.Component;
 import org.springframework.web.servlet.HandlerInterceptor;
 
-import com.yuliyuli.dto.User;
-import com.yuliyuli.dto.UserHolder;
 import com.yuliyuli.util.JwtUtil;
 
 import io.jsonwebtoken.Claims;
 import lombok.extern.slf4j.Slf4j;
 
 import com.yuliyuli.common.Result;
+import com.yuliyuli.entity.User;
+import com.yuliyuli.entity.UserHolder;
+
 import org.springframework.data.redis.core.RedisTemplate;
 
 import java.io.PrintWriter;

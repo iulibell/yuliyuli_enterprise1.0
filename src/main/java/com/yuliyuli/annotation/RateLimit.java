@@ -1,4 +1,4 @@
-package com.yuliyuli.common;
+package com.yuliyuli.annotation;
 
 import java.lang.annotation.ElementType;
 import java.lang.annotation.RetentionPolicy;

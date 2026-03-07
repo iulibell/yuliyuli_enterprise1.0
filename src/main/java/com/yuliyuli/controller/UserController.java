@@ -11,9 +11,9 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 
 import com.yuliyuli.common.Result;
-import com.yuliyuli.dto.ExistPhone;
-import com.yuliyuli.dto.User;
-import com.yuliyuli.dto.UserInfo;
+import com.yuliyuli.entity.ExistPhone;
+import com.yuliyuli.entity.User;
+import com.yuliyuli.entity.UserInfo;
 import com.yuliyuli.service.UserService;
 import com.yuliyuli.util.JwtUtil;
 import com.yuliyuli.vo.LoginVO;

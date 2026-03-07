@@ -8,7 +8,7 @@ import org.aspectj.lang.reflect.MethodSignature;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
-import com.yuliyuli.common.RateLimit;
+import com.yuliyuli.annotation.RateLimit;
 import com.yuliyuli.util.RateLimiterUtil;
 
 // AOP切面
