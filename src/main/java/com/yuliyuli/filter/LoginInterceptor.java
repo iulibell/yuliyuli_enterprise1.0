@@ -17,8 +17,8 @@ import org.springframework.data.redis.core.RedisTemplate;
 
 import java.io.PrintWriter;
 
-import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpServletResponse;
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletResponse;
 
 @Slf4j
 @Component
@@ -35,7 +35,8 @@ public class LoginInterceptor implements HandlerInterceptor {
         this.redisTemplate = redisTemplate;
     }
     
-    public boolean preHandle(HttpServletRequest request, HttpServletResponse response, Object handler) throws Exception {
+    public boolean preHandle(HttpServletRequest request, HttpServletResponse response, Object handler)
+            throws Exception {
         try{
         String token = request.getHeader("token");
         log.info("【登录拦截器】校验请求Token,请求路径:{},Token:{}", request.getRequestURI(), token);

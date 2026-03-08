@@ -3,9 +3,10 @@ package com.yuliyuli.util;
 import java.util.Random;
 import java.util.concurrent.TimeUnit;
 
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.stereotype.Component;
+
+import jakarta.annotation.Resource;
 
 /**
  * 缓存工具类
@@ -15,7 +16,7 @@ import org.springframework.stereotype.Component;
 @Component
 public class CacheUtil {
     
-    @Autowired
+    @Resource
     private RedisTemplate<String, Object> redisTemplate;
 
     // 基础过期时间(秒)

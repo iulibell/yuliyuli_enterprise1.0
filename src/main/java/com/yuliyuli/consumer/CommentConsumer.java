@@ -7,7 +7,6 @@ import org.redisson.api.RLock;
 import org.redisson.api.RedissonClient;
 import org.springframework.amqp.core.Message;
 import org.springframework.amqp.rabbit.annotation.RabbitListener;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
@@ -21,25 +20,26 @@ import com.yuliyuli.mapper.VideoMapper;
 import com.yuliyuli.wrapper.VideoWrapper;
 
 import cn.ipokerface.snowflake.SnowflakeIdGenerator;
+import jakarta.annotation.Resource;
 import lombok.extern.slf4j.Slf4j;
 
 @Component
 @Slf4j
 public class CommentConsumer {
 
-    @Autowired
+    @Resource
     private RedissonClient redissonClient;
 
-    @Autowired
+    @Resource
     private CommentMapper commentMapper;
 
-    @Autowired
+    @Resource
     private VideoMapper videoMapper;
 
-    @Autowired
+    @Resource
     private VideoWrapper videoWrapper;
 
-    @Autowired
+    @Resource
     private SnowflakeIdGenerator snowflakeIdGenerator;
     
     @RabbitListener(queues = RabbitMqConfig.COMMENT_QUEUE_NAME)
@@ -71,9 +71,9 @@ public class CommentConsumer {
         try{
             LambdaQueryWrapper<Video> getCommentCountWrapper = videoWrapper.getCommentCount(comment.getVideoId().toString());
             comment.setCommentId(commentId);
-            commentMapper.insertComment(comment);
+            commentMapper.insert(comment);
             int commentCount = Integer.valueOf(videoMapper.selectById(getCommentCountWrapper).getCommentCount());
-            commentMapper.updateVideoCommentCount(commentCount, comment.getVideoId().toString());
+            videoMapper.updateVideoCommentCount(commentCount, comment.getVideoId().toString());
             channel.basicAck(deliveryTag, false);
         }catch(Exception e){
             try{

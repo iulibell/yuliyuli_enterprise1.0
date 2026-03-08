@@ -8,7 +8,7 @@ import io.swagger.v3.oas.annotations.Parameter;
 import java.util.Date;
 
 import jakarta.validation.constraints.NotBlank;
-import javax.validation.constraints.Size;
+import jakarta.validation.constraints.Size;
 
 @Data
 @TableName("user")

@@ -1,11 +1,11 @@
 package com.yuliyuli.controller;
 
-import io.swagger.annotations.Api;
-import io.swagger.annotations.ApiOperation;
-import io.swagger.annotations.ApiParam;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.Parameter;
+import io.swagger.v3.oas.annotations.tags.Tag;
+import jakarta.annotation.Resource;
 import lombok.extern.slf4j.Slf4j;
 
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -27,14 +27,14 @@ import java.util.Map;
 
 @RestController
 @RequestMapping("/user")
-@Api(tags = "用户模块")
+@Tag(name = "用户模块")
 @Slf4j
 public class UserController {
 
-    @Autowired
+    @Resource
     private UserService userService;
 
-    @Autowired
+    @Resource
     private JwtUtil jwtUtil;
 
     /**
@@ -42,9 +42,9 @@ public class UserController {
      * @param loginUser 登录参数（账号+密码）
      * @return 登录结果（Token+用户信息）
      */
-    @ApiOperation("用户登录")
+    @Operation(summary = "用户登录")
     @PostMapping("/login")
-    public Result<Object> login(@ApiParam(value = "登录参数（账号+密码）", required = true) 
+    public Result<Object> login(@Parameter(description = "登录参数（账号+密码）", required = true)
                                 @Validated @RequestBody User loginDto) {
         log.info("【用户登录】账号：{}", loginDto.getAccount());
         //查询用户账号
@@ -66,9 +66,9 @@ public class UserController {
      * @param existPhoneDto 校验参数（手机号）
      * @return 校验结果（验证码）
      */
-    @ApiOperation("校验模块")
+    @Operation(summary = "校验模块")
     @PostMapping("/getCode")
-    public Result<Object> check(@ApiParam(value = "校验参数（手机号）", required = true) 
+    public Result<Object> check(@Parameter(description = "校验参数（手机号）", required = true)
                                 @Validated @RequestBody ExistPhone existPhoneDto) {
         log.info("【校验模块】手机号：{}", existPhoneDto.getPhone());
         // 校验用户
@@ -85,11 +85,11 @@ public class UserController {
      * @param code 校验参数（验证码）
      * @return 注册结果（用户信息）
      */
-    @ApiOperation("注册模块")
+    @Operation(summary = "注册模块")
     @PostMapping("/register")
-    public Result<Object> register(@ApiParam(value = "注册参数（账号+验证码+密码）", required = true) 
-                                @Validated @RequestBody User registerDto, 
-                                @ApiParam(value = "校验参数（验证码）", required = true) String code) {
+    public Result<Object> register(@Parameter(description = "注册参数（账号+验证码+密码）", required = true)
+                                @Validated @RequestBody User registerDto,
+                                @Parameter(description = "校验参数（验证码）", required = true) String code) {
         // 注册用户
         User user = userService.register(registerDto.getAccount(), code, registerDto.getPassword());
         if (user == null) {
@@ -103,9 +103,9 @@ public class UserController {
      * @param userInfoDto 修改参数（性别+生日+签名）
      * @return 修改结果（用户信息）
      */
-    @ApiOperation("修改模块")
+    @Operation(summary = "修改模块")
     @PostMapping("/modifyInfo")
-    public Result<Object> modifyInfo(@ApiParam(value = "修改参数（性别+生日+签名）", required = true) 
+    public Result<Object> modifyInfo(@Parameter(description = "修改参数（性别+生日+签名）", required = true)
                                 @Validated @RequestBody UserInfo userInfoDto) {
         // 修改用户信息
         UpdateUserInfoVO updateUserInfoVO = userService.modifyInfo(

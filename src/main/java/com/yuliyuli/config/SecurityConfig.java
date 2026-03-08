@@ -25,7 +25,7 @@ public class SecurityConfig{
     }
 
     @Bean
-    public SecurityFilterChain securityFilterChain(HttpSecurity httpSecurity) {
+    public SecurityFilterChain securityFilterChain(HttpSecurity httpSecurity) throws Exception {
         httpSecurity.
                 // 禁用Session（JWT不需要Session，避免会话固定攻击）
                 sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))

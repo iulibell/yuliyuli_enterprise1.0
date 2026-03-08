@@ -15,7 +15,7 @@ public class WebConfig implements WebMvcConfigurer {
             // 2. 视频/评论模块公开接口
             "/video/list", "/video/detail", "/comment/list",
             // 3. Knife4j接口文档路径（开发环境必备）
-            "/doc.html", "/webjars/**", "/swagger-resources/**", "/v2/api-docs/**",
+            "/doc.html", "/webjars/**", "/swagger-ui/**", "/v3/api-docs/**",
             // 4. 其他静态资源（可选，若有前端静态文件需放行）
             "/static/**", "/favicon.ico"
     };

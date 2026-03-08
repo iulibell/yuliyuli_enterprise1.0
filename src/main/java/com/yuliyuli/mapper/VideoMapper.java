@@ -44,4 +44,13 @@ public interface VideoMapper extends BaseMapper<Video> {
      */
     @Update("UPDATE video SET collection_count = #{collectionCount} + 1 WHERE url = #{url}")
     int updateVideoCollectCount(int collectionCount, String url);
+
+    /**
+     * 更新视频评论数
+     * @param videoId 视频ID
+     * @param commentCount 评论数
+     * @return 影响行数
+     */
+    @Update("UPDATE video SET comment_count = #{commentCount} + 1 WHERE url = #{url}")
+    int updateVideoCommentCount(int commentCount, String url);
 }

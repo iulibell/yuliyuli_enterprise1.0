@@ -5,7 +5,6 @@ import java.util.concurrent.TimeUnit;
 
 import org.redisson.api.RBucket;
 import org.redisson.api.RedissonClient;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Component;
 
@@ -17,6 +16,7 @@ import com.yuliyuli.vo.VideoVO;
 import com.yuliyuli.wrapper.VideoWrapper;
 
 import jakarta.annotation.PostConstruct;
+import jakarta.annotation.Resource;
 import lombok.extern.slf4j.Slf4j;
 import java.util.List;
 
@@ -24,13 +24,13 @@ import java.util.List;
 @Slf4j
 public class InitVideoInfo {
 
-    @Autowired
+    @Resource
     private VideoWrapper videoWrapper;
 
-    @Autowired
+    @Resource
     private VideoMapper videoMapper;
 
-    @Autowired
+    @Resource
     private RedissonClient redissonClient;
 
 

@@ -19,6 +19,7 @@ import com.yuliyuli.service.UserService;
 import com.yuliyuli.util.JwtUtil;
 import com.yuliyuli.wrapper.UserWrapper;
 
+import jakarta.annotation.Resource;
 import lombok.extern.slf4j.Slf4j;
 
 import com.yuliyuli.vo.LoginVO;
@@ -28,31 +29,29 @@ import org.springframework.data.redis.core.RedisTemplate;
 
 import java.util.concurrent.TimeUnit;
 
-import org.springframework.beans.factory.annotation.Autowired;
-
 @Service
 @Slf4j
 public class UserServiceImpl implements UserService {
 
-    @Autowired
+    @Resource
     private UserMapper userMapper;
 
-    @Autowired
+    @Resource
     private UserInfoMapper userInfoMapper;
 
-    @Autowired
+    @Resource
     private PasswordEncoder passwordEncoder;
 
-    @Autowired
+    @Resource
     private ExistPhoneMapper existPhoneMapper;
 
-    @Autowired
+    @Resource
     private RedisTemplate<String, Object> redisTemplate;
 
-    @Autowired
+    @Resource
     private UserWrapper userWrapper;
 
-    @Autowired
+    @Resource
     private JwtUtil jwtUtil;
 
     // Redis验证码缓存前缀

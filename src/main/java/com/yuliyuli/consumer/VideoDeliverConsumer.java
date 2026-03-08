@@ -7,7 +7,6 @@ import org.redisson.api.RLock;
 import org.redisson.api.RedissonClient;
 import org.springframework.amqp.core.Message;
 import org.springframework.amqp.rabbit.annotation.RabbitListener;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
 import com.rabbitmq.client.Channel;
@@ -19,22 +18,23 @@ import com.yuliyuli.mapper.VideoMapper;
 import com.yuliyuli.util.TransferUtil;
 
 import cn.ipokerface.snowflake.SnowflakeIdGenerator;
+import jakarta.annotation.Resource;
 import lombok.extern.slf4j.Slf4j;
 
 @Component
 @Slf4j
 public class VideoDeliverConsumer {
 
-    @Autowired
+    @Resource
     private TransferUtil transferUtil;
 
-    @Autowired
+    @Resource
     private VideoMapper videoMapper;
 
-    @Autowired
+    @Resource
     private RedissonClient redissonClient;
 
-    @Autowired
+    @Resource
     private SnowflakeIdGenerator snowflakeIdGenerator;
 
     /** 

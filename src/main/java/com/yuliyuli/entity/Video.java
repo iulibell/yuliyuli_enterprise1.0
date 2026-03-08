@@ -9,7 +9,7 @@ import jakarta.validation.constraints.NotBlank;
 
 import java.util.Date;
 
-import javax.validation.constraints.Size;
+import jakarta.validation.constraints.Size;
 
 @Data
 @TableName("video")

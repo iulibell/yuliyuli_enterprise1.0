@@ -9,7 +9,6 @@ import org.redisson.api.RSet;
 import org.redisson.api.RedissonClient;
 import org.springframework.amqp.core.Message;
 import org.springframework.amqp.rabbit.annotation.RabbitListener;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
 import com.rabbitmq.client.Channel;
@@ -18,16 +17,17 @@ import com.yuliyuli.entity.VideoCollection;
 import com.yuliyuli.exception.GlobalExceptionHandler;
 import com.yuliyuli.mapper.VideoMapper;
 
+import jakarta.annotation.Resource;
 import lombok.extern.slf4j.Slf4j;
 
 @Component
 @Slf4j
 public class VideoCollectConsumer {
 
-    @Autowired
+    @Resource
     private RedissonClient redissonClient;
     
-    @Autowired
+    @Resource
     private VideoMapper videoMapper;
 
     @SuppressWarnings("null")

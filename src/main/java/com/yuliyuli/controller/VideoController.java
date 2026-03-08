@@ -1,6 +1,5 @@
 package com.yuliyuli.controller;
 
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
@@ -20,10 +19,10 @@ import com.yuliyuli.exception.GlobalExceptionHandler;
 import com.yuliyuli.service.VideoService;
 import com.yuliyuli.vo.VideoVO;
 
-import io.swagger.annotations.Api;
-import io.swagger.annotations.ApiOperation;
-import io.swagger.annotations.ApiParam;
+import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
+import io.swagger.v3.oas.annotations.tags.Tag;
+import jakarta.annotation.Resource;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestParam;
@@ -31,11 +30,11 @@ import org.springframework.web.bind.annotation.RequestParam;
 
 @RestController
 @RequestMapping("/video")
-@Api(tags = "视频模块")
+@Tag(name = "视频模块")
 @Slf4j
 public class VideoController {
 
-    @Autowired
+    @Resource
     private VideoService videoService;
 
     private void checkLogin() {
@@ -44,11 +43,11 @@ public class VideoController {
             throw new GlobalExceptionHandler.BusinessException("请完成登录");
         }
     }
-    
+
     @RateLimit(limit = 10, window = 60, key = "delivery")
     @PostMapping("/delivery")
-    @ApiOperation("视频投递")
-    public Result<Object> deliveryVideo(@ApiParam(value = "传递的视频对象", required = true)
+    @Operation(summary = "视频投递")
+    public Result<Object> deliveryVideo(@Parameter(description = "传递的视频对象", required = true)
         @Validated @RequestBody VideoDelivery video) {
             checkLogin();
         try{
@@ -60,11 +59,11 @@ public class VideoController {
         }
         return Result.success();
     }
-    
+
     @RateLimit(limit = 10, window = 60, key = "like")
     @PostMapping("/like")
-    @ApiOperation("视频点赞")
-    public Result<Object> likeVideo(@ApiParam(value = "传递的视频对象", required = true)
+    @Operation(summary = "视频点赞")
+    public Result<Object> likeVideo(@Parameter(description = "传递的视频对象", required = true)
         @Validated @RequestBody VideoLike videoLike) {
             checkLogin();
         try{
@@ -76,11 +75,11 @@ public class VideoController {
         }
         return Result.success();
     }
-    
+
     @RateLimit(limit = 10, window = 60, key = "collect")
     @PostMapping("/collect")
-    @ApiOperation("视频收藏")
-    public Result<Object> collectVideo(@ApiParam(value = "传递的视频对象", required = true)
+    @Operation(summary = "视频收藏")
+    public Result<Object> collectVideo(@Parameter(description = "传递的视频对象", required = true)
         @Validated @RequestBody VideoCollection videoCollect) {
             checkLogin();
         try{
@@ -95,8 +94,8 @@ public class VideoController {
 
     @RateLimit(limit = 10, window = 60, key = "comment")
     @PostMapping("/comment")
-    @ApiOperation("视频评论")
-    public Result<Object> postMethodName(@ApiParam(value = "传递的评论对象", required = true)
+    @Operation(summary = "视频评论")
+    public Result<Object> commentVideo(@Parameter(description = "传递的评论对象", required = true)
         @RequestBody Comment comment) {
             checkLogin();
         try{
@@ -110,9 +109,10 @@ public class VideoController {
     }
 
     @GetMapping("/videoList")
-    public Result<Page<VideoVO>> getVideoList(@Parameter(name ="页码") @RequestParam(defaultValue = "1") 
-        int pageNum, 
-        @Parameter(name = "每页数量") @RequestParam(defaultValue = "10") 
+    @Operation(summary = "获取视频列表")
+    public Result<Page<VideoVO>> getVideoList(@Parameter(description = "页码") @RequestParam(defaultValue = "1")
+        int pageNum,
+        @Parameter(description = "每页数量") @RequestParam(defaultValue = "10")
         int pageSize) {
         try{
             Page<VideoVO> page = videoService.getVideoList(pageNum, pageSize);

@@ -4,6 +4,9 @@ import com.yuliyuli.service.VideoService;
 import com.yuliyuli.util.VideoConvertUtil;
 import com.yuliyuli.vo.VideoVO;
 import com.yuliyuli.wrapper.VideoWrapper;
+
+import jakarta.annotation.Resource;
+
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.yuliyuli.config.RabbitMqConfig;
 import com.yuliyuli.entity.Comment;
@@ -26,27 +29,26 @@ import java.util.concurrent.TimeUnit;
 import org.redisson.api.RBucket;
 import org.redisson.api.RedissonClient;
 import org.springframework.amqp.rabbit.core.RabbitTemplate;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 @Service
 @Slf4j
 public class VideoServiceImpl implements VideoService {
 
-    @Autowired
+    @Resource
     private RabbitTemplate rabbitTemplate;
 
     // 视频分发线程池
-    @Autowired
+    @Resource
     private ExecutorService threadPoolExecutor;
 
-    @Autowired
+    @Resource
     private RedissonClient redissonClient;
 
-    @Autowired
+    @Resource
     private VideoMapper videoMapper;
 
-    @Autowired
+    @Resource
     private VideoWrapper videoWrapper;
     /**
      * 视频分发

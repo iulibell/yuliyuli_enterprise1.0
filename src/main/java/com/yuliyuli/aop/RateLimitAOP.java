@@ -5,18 +5,19 @@ import org.aspectj.lang.ProceedingJoinPoint;
 import org.aspectj.lang.annotation.Around;
 import org.aspectj.lang.annotation.Aspect;
 import org.aspectj.lang.reflect.MethodSignature;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
 import com.yuliyuli.annotation.RateLimit;
 import com.yuliyuli.util.RateLimiterUtil;
+
+import jakarta.annotation.Resource;
 
 // AOP切面
 @Aspect
 @Component
 public class RateLimitAOP {
 
-    @Autowired
+    @Resource
     private RateLimiterUtil rateLimiterUtil;
 
     @Around("@annotation(rateLimit)")
