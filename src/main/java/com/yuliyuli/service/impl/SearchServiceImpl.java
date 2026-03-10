@@ -27,7 +27,7 @@ public class SearchServiceImpl implements SearchService {
     public List<SearchVideoVO> getTopTenVideo(){
         List<VideoDocument> topTenVideo = redisTemplate.opsForList().
             range(SearchVideoInit.HOT_TOP_KEY, 0, 9);
-        List<SearchVideoVO> topTenVOList = VideoConvertUtil.convertSearchVideoVOList(topTenVideo);
+        List<SearchVideoVO> topTenVOList = VideoConvertUtil.convertVideoDocumentListToSearchVideoVOList(topTenVideo);
         return topTenVOList;
     }
 
@@ -35,7 +35,7 @@ public class SearchServiceImpl implements SearchService {
     public List<SearchVideoVO> findByTitleSuggest(String title) {
         List<VideoDocument> videoDocuments = videoRepository.findByTitleSuggest(title, 
             PageRequest.of(0, 10)).getContent();
-        List<SearchVideoVO> videoVOList = VideoConvertUtil.convertSearchVideoVOList(videoDocuments);
+        List<SearchVideoVO> videoVOList = VideoConvertUtil.convertVideoDocumentListToSearchVideoVOList(videoDocuments);
         return videoVOList;
     }
 }

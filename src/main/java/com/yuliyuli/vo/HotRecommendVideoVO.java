@@ -1,12 +1,12 @@
 package com.yuliyuli.vo;
 
+import java.util.List;
+
 import com.yuliyuli.document.VideoDocument;
 import lombok.Data;
 
-import java.util.List;
-
 @Data
-public class SearchVideoVO {
-    // 搜索到的视频列表
+public class HotRecommendVideoVO {
+    // 热门推荐视频列表
     private List<VideoDocument> videoDocuments;
 }

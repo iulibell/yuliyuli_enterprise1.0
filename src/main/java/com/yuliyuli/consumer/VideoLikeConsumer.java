@@ -3,7 +3,6 @@ package com.yuliyuli.consumer;
 import java.util.Map;
 import java.util.concurrent.TimeUnit;
 
-import org.redisson.api.RAtomicLong;
 import org.redisson.api.RLock;
 import org.redisson.api.RSet;
 import org.redisson.api.RedissonClient;
@@ -36,13 +35,14 @@ public class VideoLikeConsumer {
         long deliveryTag = mqMessage.getMessageProperties().getDeliveryTag();
         RLock lock = null;
         
+        final String DELAY_KEY = "video:like:delay";
+        final Long DELAY_TIME = System.currentTimeMillis() + 5000;
         final String LOCK_KEY_PREFIX = "video:like:lock:";
-        final String COUNTER_KEY_PREFIX = "video:like:";
         final String USER_KEY_PREFIX = "user:like:";
 
         if(videoLike == null || videoLike.getVideoId() == null || videoLike.getUserId() == null){
-        log.error("点赞失败");
-        throw new GlobalExceptionHandler.BusinessException("视频id或用户id不能为空");
+            log.error("点赞失败");
+            throw new GlobalExceptionHandler.BusinessException("视频id或用户id不能为空");
         }
 
         // 从消息头中获取重试次数,如果没有则默认0
@@ -59,28 +59,12 @@ public class VideoLikeConsumer {
             return;
         }
         try{
-            final String COUNTER_KEY = COUNTER_KEY_PREFIX + videoLike.getVideoId();
             final String USER_KEY = USER_KEY_PREFIX + videoLike.getUserId();
-
-            // 获取点赞计数器和用户点赞集合
-            RAtomicLong counter = redissonClient.getAtomicLong(COUNTER_KEY);
             RSet<Long> userSet = redissonClient.getSet(USER_KEY);
-            Long finallyCount = null;
-        
-            if(userSet.contains(videoLike.getUserId())){
-                log.info("用户{}已点赞视频{},取消点赞", videoLike.getUserId(), videoLike.getVideoId());
-                // 取消点赞：移除用户ID + 计数-1
-                userSet.remove(videoLike.getUserId());
-                finallyCount = counter.decrementAndGet();
-                videoMapper.updateVideoLikeCount(finallyCount.intValue(), videoLike.getVideoId().toString());
-                log.info("用户{}取消点赞视频{}，最新点赞数：{}", videoLike.getUserId(), videoLike.getVideoId(), finallyCount);
-            }else{
-                // 点赞：添加用户ID + 计数+1
-                userSet.add(videoLike.getUserId());
-                finallyCount = counter.incrementAndGet();
-                videoMapper.updateVideoLikeCount(finallyCount.intValue(), videoLike.getVideoId().toString());
-                log.info("用户{}点赞视频{}，最新点赞数：{}", videoLike.getUserId(), videoLike.getVideoId(), finallyCount);
-            }
+            
+            userSet.add(videoLike.getVideoId());
+            redissonClient.getScoredSortedSet(DELAY_KEY)
+                .add(DELAY_TIME, videoLike);
 
             // 6. 手动ACK：确认消息消费成功（关键：防止重复消费）
             basicNack(deliveryTag, channel, retryCount, headers);
@@ -136,7 +120,7 @@ public class VideoLikeConsumer {
     public void basicNack(Long deliveryTag, Channel channel, int retryCount, Map<String,Object> headers){
         try{
             if(retryCount < 3){
-                headers.put("x-retry-count", retryCount + 1);
+                headers.put("like-retry-count", retryCount + 1);
                 channel.basicNack(deliveryTag, false, true);
             }
             if(retryCount >= 3){

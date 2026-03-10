@@ -84,7 +84,7 @@ public class VideoInfoInit {
     private void cacheVideosToRedis(List<Video> videos, int pageNum){
         Duration expireDuration = Duration.ofHours(EXPIRE_TIME);
         for(Video video: videos){
-            VideoVO videoVO = VideoConvertUtil.convertToVideoVO(video);
+            VideoVO videoVO = VideoConvertUtil.convertVideoToVideoVO(video);
             String videoKey = VIDEO_CACHE_PREFIX + videoVO.getUrl();
             RBucket<VideoVO> videoBucket = redissonClient.getBucket(videoKey);
             videoBucket.set(videoVO, expireDuration);
@@ -93,7 +93,7 @@ public class VideoInfoInit {
         RBucket<List<VideoVO>> listBucket = redissonClient.getBucket(listKey);
         listBucket.set(videos
             .stream()
-            .map(VideoConvertUtil::convertToVideoVO).toList(), 
+            .map(VideoConvertUtil::convertVideoToVideoVO).toList(), 
             expireDuration);
     }
 }

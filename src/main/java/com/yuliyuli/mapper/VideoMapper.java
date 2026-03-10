@@ -1,5 +1,6 @@
 package com.yuliyuli.mapper;
 
+import org.apache.ibatis.annotations.Delete;
 import org.apache.ibatis.annotations.Insert;
 import org.apache.ibatis.annotations.Update;
 
@@ -33,7 +34,7 @@ public interface VideoMapper extends BaseMapper<Video> {
      * @param likeCount 点赞数
      * @return 影响行数
      */
-    @Update("UPDATE video SET like_count = #{likeCount} WHERE url = #{url}")
+    @Update("UPDATE video SET like_count = like_count + #{likeCount} WHERE url = #{url}")
     int updateVideoLikeCount(int likeCount, String url);
 
     /**
@@ -42,7 +43,7 @@ public interface VideoMapper extends BaseMapper<Video> {
      * @param collectionCount 收藏数
      * @return 影响行数
      */
-    @Update("UPDATE video SET collection_count = #{collectionCount} + 1 WHERE url = #{url}")
+    @Update("UPDATE video SET collection_count = collection_count + #{collectionCount} WHERE url = #{url}")
     int updateVideoCollectCount(int collectionCount, String url);
 
     /**
@@ -51,6 +52,24 @@ public interface VideoMapper extends BaseMapper<Video> {
      * @param commentCount 评论数
      * @return 影响行数
      */
-    @Update("UPDATE video SET comment_count = #{commentCount} + 1 WHERE url = #{url}")
+    @Update("UPDATE video SET comment_count = comment_count + #{commentCount} WHERE url = #{url}")
     int updateVideoCommentCount(int commentCount, String url);
+
+    /**
+     * 更新视频播放数
+     * @param videoId 视频ID
+     * @param playCount 播放数
+     * @return 影响行数
+     */
+    @Update("UPDATE video SET play_count = play_count + #{playCount} WHERE url = #{url}")
+    int updateVideoPlayCount(int playCount, String url);
+
+    /**
+     * 删除视频点赞
+     * @param videoId 视频ID
+     * @param userId 用户ID
+     * @return 影响行数
+     */
+    @Delete("DELETE FROM video_like WHERE video_id = #{videoId} AND user_id = #{userId}")
+    int deleteVideoLike(Long videoId, Long userId);
 }

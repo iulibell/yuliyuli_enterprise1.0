@@ -24,4 +24,29 @@ public class VideoWrapper {
     public LambdaQueryWrapper<Video> getInitVideo(){
         return new LambdaQueryWrapper<Video>().eq(Video::getIsDelete,0);
     }
+
+    /**
+     * 获取相关视频,根据视频类型id排序
+     * @param typeId 视频类型id
+     * @return LambdaQueryWrapper<Video>获取相关视频
+     */
+    public LambdaQueryWrapper<Video> getRelatedVideo(int typeId){
+        LambdaQueryWrapper<Video> wrapper = new LambdaQueryWrapper<Video>()
+            .eq(Video::getIsDelete,0);
+        if(typeId!=0){
+            wrapper.eq(Video::getTypeId,typeId);
+        }
+        return wrapper;
+    }
+
+    /**
+     * 获取作者上传的视频,根据视频id排序
+     * @param userId 用户id
+     * @return LambdaQueryWrapper<Video>获取作者上传的视频
+     */
+    public LambdaQueryWrapper<Video> getAuthorPageVideo(Long userId){
+        return new LambdaQueryWrapper<Video>()
+            .eq(Video::getIsDelete,0)
+            .eq(Video::getUserId,userId);
+    }
 }

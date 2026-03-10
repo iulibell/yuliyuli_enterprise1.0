@@ -143,7 +143,7 @@ public class VideoDeliverConsumer {
         try{
             if(retryCount >= 3){
                 channel.basicNack(deliveryTag, false, false);
-                headers.put("x-retry-count", retryCount + 1);
+                headers.put("video-delivery-retry-count", retryCount + 1);
             }else{
                 channel.basicNack(deliveryTag, false, true);
             }

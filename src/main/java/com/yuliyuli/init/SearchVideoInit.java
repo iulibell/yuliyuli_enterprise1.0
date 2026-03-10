@@ -33,7 +33,7 @@ public class SearchVideoInit implements CommandLineRunner{
     // 缓存的前十个热门视频的前缀
     public static final String HOT_TOP_KEY = "video:hot:top";
     // 缓存的所有热门视频，100条，用于处理前十热门视频的过期
-    private static final String HOT_ALL_KEY = "video:hot:all:";
+    public static final String HOT_ALL_KEY = "video:hot:all:";
     // 缓存的热门视频过期时间，随机10-20小时
     private static final int EXPIRE_TIME = 11;
 
@@ -111,6 +111,7 @@ public class SearchVideoInit implements CommandLineRunner{
                     videoDocument.getPlayCount());
                 redisTemplate.opsForList().leftPush(hotVideoKey + videoDocument.getUrl(), videoDocument);
                 redisTemplate.expire(hotVideoKey, EXPIRE_TIME + new Random().nextInt(3), TimeUnit.HOURS);
+                redisTemplate.expire(hotVideoKey + videoDocument.getUrl(), EXPIRE_TIME + new Random().nextInt(3), TimeUnit.HOURS);
             }
             log.info("同步视频数据到Redis成功");
         }catch (Exception e){

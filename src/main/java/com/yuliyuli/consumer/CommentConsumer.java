@@ -122,7 +122,7 @@ public class CommentConsumer {
     public void basicNack(Long deliveryTag, Channel channel, int retryCount, Map<String,Object> headers){
         try{
             if(retryCount < 3){
-                headers.put("x-retry-count", retryCount + 1);
+                headers.put("comment-retry-count", retryCount + 1);
                 channel.basicNack(deliveryTag, false, true);
             }
             if(retryCount >= 3){

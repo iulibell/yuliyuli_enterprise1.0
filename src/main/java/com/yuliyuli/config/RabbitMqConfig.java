@@ -6,6 +6,27 @@ import org.springframework.amqp.core.*;
 
 @Configuration
 public class RabbitMqConfig {
+
+    /**
+     * 视频播放配置（包含死信）
+     */
+    public static final String PLAY_EXCHANGE_NAME = "play_exchange";
+    public static final String PLAY_QUEUE_NAME = "play_queue";
+    public static final String PLAY_ROUTING_KEY = "play_routing_key";
+    public static final String PLAY_DEAD_EXCHANGE_NAME = "play_dead_exchange";
+    public static final String PLAY_DEAD_QUEUE_NAME = "play_dead_queue";
+    public static final String PLAY_DEAD_ROUTING_KEY = "play_dead_routing_key";
+
+    /**
+     * 热门视频播放配置（包含死信）
+     */
+    public static final String HOT_PLAY_EXCHANGE_NAME = "hot_play_exchange";
+    public static final String HOT_PLAY_QUEUE_NAME = "hot_play_queue";
+    public static final String HOT_PLAY_ROUTING_KEY = "hot_play_routing_key";
+    public static final String HOT_PLAY_DEAD_EXCHANGE_NAME = "hot_play_dead_exchange";
+    public static final String HOT_PLAY_DEAD_QUEUE_NAME = "hot_play_dead_queue";
+    public static final String HOT_PLAY_DEAD_ROUTING_KEY = "hot_play_dead_routing_key";
+
     /**
      * 视频评论配置（包含死信）
      */
@@ -191,5 +212,76 @@ public class RabbitMqConfig {
         return BindingBuilder.bind(commentQueue())
         .to(commentExchange())
         .with(COMMENT_ROUTING_KEY).noargs();
+    }
+
+    /**
+     * 热门视频播放配置（包含死信）
+     */
+    @Bean
+    public Queue hotPlayDeadQueue() {
+        return QueueBuilder.durable(HOT_PLAY_DEAD_QUEUE_NAME).build();
+    }
+    @Bean
+    public Exchange hotPlayDeadExchange() {
+        return ExchangeBuilder.directExchange(HOT_PLAY_DEAD_EXCHANGE_NAME).durable(true).build();
+    }
+    @Bean
+    public Binding hotPlayDeadBinding() {
+        return BindingBuilder.bind(hotPlayDeadQueue())
+        .to(hotPlayDeadExchange())
+        .with(HOT_PLAY_DEAD_ROUTING_KEY).noargs();
+    }
+    @Bean
+    public Queue hotPlayQueue() {
+        return QueueBuilder.durable(HOT_PLAY_QUEUE_NAME)
+        .deadLetterExchange(HOT_PLAY_DEAD_EXCHANGE_NAME)
+        .deadLetterRoutingKey(HOT_PLAY_DEAD_ROUTING_KEY).build();
+    }
+    @Bean
+    public Exchange hotPlayExchange() {
+        return ExchangeBuilder.topicExchange(HOT_PLAY_EXCHANGE_NAME).durable(true).build();
+    }
+    @Bean
+    public Binding hotPlayBinding() {
+        return BindingBuilder.bind(hotPlayQueue())
+        .to(hotPlayExchange())
+        .with(HOT_PLAY_ROUTING_KEY).noargs();
+    }
+
+    /**
+     * 视频播放配置（包含死信）
+     */
+    @Bean
+    public Queue playQueue() {
+        return QueueBuilder.durable(PLAY_QUEUE_NAME)
+        .deadLetterExchange(PLAY_DEAD_EXCHANGE_NAME)
+        .deadLetterRoutingKey(PLAY_DEAD_ROUTING_KEY).build();
+    }
+
+    @Bean
+    public Exchange playExchange() {
+        return ExchangeBuilder.topicExchange(PLAY_EXCHANGE_NAME).durable(true).build();
+    }
+    @Bean
+    public Binding playBinding() {
+        return BindingBuilder.bind(playQueue())
+        .to(playExchange())
+        .with(PLAY_ROUTING_KEY).noargs();
+    }
+
+    @Bean
+    public Queue playDeadQueue() {
+        return QueueBuilder.durable(PLAY_DEAD_QUEUE_NAME).build();
+    }
+
+    @Bean
+    public Exchange playDeadExchange() {
+        return ExchangeBuilder.directExchange(PLAY_DEAD_EXCHANGE_NAME).durable(true).build();
+    }
+    @Bean
+    public Binding playDeadBinding() {
+        return BindingBuilder.bind(playDeadQueue())
+        .to(playDeadExchange())
+        .with(PLAY_DEAD_ROUTING_KEY).noargs();
     }
 }

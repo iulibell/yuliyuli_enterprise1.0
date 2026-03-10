@@ -9,6 +9,7 @@ import org.springframework.beans.BeanUtils;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.yuliyuli.document.VideoDocument;
 import com.yuliyuli.entity.Video;
+import com.yuliyuli.vo.HotRecommendVideoVO;
 import com.yuliyuli.vo.SearchVideoVO;
 import com.yuliyuli.vo.VideoVO;
 
@@ -19,7 +20,7 @@ public class VideoConvertUtil {
      * @param video 视频实体类
      * @return 视频VO类
      */
-    public static VideoVO convertToVideoVO(Video video){
+    public static VideoVO convertVideoToVideoVO(Video video){
 
         if(video == null){
             return null;
@@ -34,26 +35,36 @@ public class VideoConvertUtil {
      * @param videoList 视频实体类列表
      * @return 视频VO类列表
      */
-    public static List<VideoVO> convertToVideoVOList(List<Video> videoList){
+    public static List<VideoVO> convertVideoListToVideoVOList(List<Video> videoList){
         if(videoList == null){
             return null;
         }
         return videoList.stream()
-        .map(VideoConvertUtil::convertToVideoVO)
+        .map(VideoConvertUtil::convertVideoToVideoVO)
         .collect(Collectors.toList());
     }
 
-    public static Page<VideoVO> converToVideoVOList(Page<Video> pageVideoList){
+    /**
+     * 视频分页列表转换为视频VO类分页列表
+     * @param pageVideoList 视频实体类分页列表
+     * @return 视频VO类分页列表
+     */
+    public static Page<VideoVO> converPageToVideoVOList(Page<Video> pageVideoList){
         if(pageVideoList == null){
             return null;
         }
-        List<VideoVO> convertToVideoVOList = convertToVideoVOList(pageVideoList.getRecords());
+        List<VideoVO> convertToVideoVOList = convertVideoListToVideoVOList(pageVideoList.getRecords());
         Page<VideoVO> videoVOPageList = new Page<>(pageVideoList.getCurrent(), 
         pageVideoList.getSize(), pageVideoList.getTotal());
         videoVOPageList.setRecords(convertToVideoVOList);
         return videoVOPageList;
     }
 
+    /**
+     * 视频文档转换为视频VO类
+     * @param map 视频文档Map
+     * @return 视频VO类
+     */
     public static VideoVO convertMapToVideoVO(Map<Object,Object> map){
         VideoVO vo = new VideoVO();
         BeanUtils.copyProperties(map, vo);
@@ -61,19 +72,37 @@ public class VideoConvertUtil {
     }
 
     /**
-     * 视频文档列表转换为视频VO类列表
-     * @param videoDocumentList 视频文档列表
+     * 视频搜索视频转换为视频VO类列表
+     * @param videoDocumentList 搜索视频列表
      * @return 视频VO类列表
      */
-    public static List<SearchVideoVO> convertSearchVideoVOList(List<VideoDocument> videoDocumentList){
+    public static List<SearchVideoVO> convertVideoDocumentListToSearchVideoVOList(List<VideoDocument> videoDocumentList){
         if(videoDocumentList == null){
             return null;
         }
         return videoDocumentList.stream()
         .map(videoDocument -> {
-            SearchVideoVO topTenVO = new SearchVideoVO();
-            topTenVO.setVideoDocuments(List.of(videoDocument));
-            return topTenVO;
+            SearchVideoVO searchVideoVO = new SearchVideoVO();
+            searchVideoVO.setVideoDocuments(List.of(videoDocument));
+            return searchVideoVO;
+        })
+        .collect(Collectors.toList());
+    }
+
+    /**
+     * 视频VO类列表转换为热门推荐视频VO类列表
+     * @param videoVOList 视频VO类列表
+     * @return 热门推荐视频VO类列表
+     */
+    public static List<HotRecommendVideoVO> convertVideoDocumentToHotRecommendVideoVO(List<VideoDocument> videoDocumentList){
+        if(videoDocumentList == null){
+            return null;
+        }
+        return videoDocumentList.stream()
+        .map(videoDocument -> {
+            HotRecommendVideoVO hotRecommendVideoVO = new HotRecommendVideoVO();
+            hotRecommendVideoVO.setVideoDocuments(List.of(videoDocument));
+            return hotRecommendVideoVO;
         })
         .collect(Collectors.toList());
     }
