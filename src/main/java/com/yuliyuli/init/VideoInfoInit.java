@@ -1,7 +1,6 @@
 package com.yuliyuli.init;
 
 import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.TimeUnit;
 
 import org.redisson.api.RBucket;
 import org.redisson.api.RedissonClient;
@@ -18,11 +17,16 @@ import com.yuliyuli.wrapper.VideoWrapper;
 import jakarta.annotation.PostConstruct;
 import jakarta.annotation.Resource;
 import lombok.extern.slf4j.Slf4j;
+
+import java.time.Duration;
 import java.util.List;
 
+/**
+ * 主页的视频信息初始化类
+ */
 @Component
 @Slf4j
-public class InitVideoInfo {
+public class VideoInfoInit {
 
     @Resource
     private VideoWrapper videoWrapper;
@@ -35,7 +39,7 @@ public class InitVideoInfo {
 
 
     public static final int PAGE_SIZE = 20;
-    public static final int EXPIRE_TIME = 24;
+    public static final int EXPIRE_TIME = 1;
 
     public static final String VIDEO_CACHE_PREFIX = "video:info:";
     public static final String VIDEO_LIST_CACHE_KEY = "video:info:list";
@@ -78,17 +82,18 @@ public class InitVideoInfo {
     }
 
     private void cacheVideosToRedis(List<Video> videos, int pageNum){
+        Duration expireDuration = Duration.ofHours(EXPIRE_TIME);
         for(Video video: videos){
             VideoVO videoVO = VideoConvertUtil.convertToVideoVO(video);
             String videoKey = VIDEO_CACHE_PREFIX + videoVO.getUrl();
             RBucket<VideoVO> videoBucket = redissonClient.getBucket(videoKey);
-            videoBucket.set(videoVO, EXPIRE_TIME, TimeUnit.HOURS);
+            videoBucket.set(videoVO, expireDuration);
         }
         String listKey = VIDEO_LIST_CACHE_KEY + pageNum;
         RBucket<List<VideoVO>> listBucket = redissonClient.getBucket(listKey);
         listBucket.set(videos
             .stream()
             .map(VideoConvertUtil::convertToVideoVO).toList(), 
-            EXPIRE_TIME, TimeUnit.HOURS);
+            expireDuration);
     }
 }

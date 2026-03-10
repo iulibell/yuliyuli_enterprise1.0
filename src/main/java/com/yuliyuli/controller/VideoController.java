@@ -16,6 +16,7 @@ import com.yuliyuli.entity.VideoCollection;
 import com.yuliyuli.entity.VideoDelivery;
 import com.yuliyuli.entity.VideoLike;
 import com.yuliyuli.exception.GlobalExceptionHandler;
+import com.yuliyuli.service.SearchService;
 import com.yuliyuli.service.VideoService;
 import com.yuliyuli.vo.VideoVO;
 
@@ -29,13 +30,16 @@ import org.springframework.web.bind.annotation.RequestParam;
 
 
 @RestController
-@RequestMapping("/video")
+@RequestMapping("/api/video")
 @Tag(name = "视频模块")
 @Slf4j
 public class VideoController {
 
     @Resource
     private VideoService videoService;
+
+    @Resource
+    private SearchService searchService;
 
     private void checkLogin() {
         User user = UserHolder.getUser();
@@ -57,7 +61,7 @@ public class VideoController {
             log.error("视频投递失败", e);
             throw new GlobalExceptionHandler.BusinessException("视频投递失败");
         }
-        return Result.success();
+        return Result.success("上传成功");
     }
 
     @RateLimit(limit = 10, window = 60, key = "like")
@@ -122,4 +126,5 @@ public class VideoController {
             throw new GlobalExceptionHandler.BusinessException("获取视频列表失败");
         }
     }
+
 }

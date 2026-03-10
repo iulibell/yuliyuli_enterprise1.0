@@ -1,12 +1,15 @@
 package com.yuliyuli.util;
 
 import java.util.List;
+import java.util.Map;
 import java.util.stream.Collectors;
 
 import org.springframework.beans.BeanUtils;
 
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
+import com.yuliyuli.document.VideoDocument;
 import com.yuliyuli.entity.Video;
+import com.yuliyuli.vo.SearchVideoVO;
 import com.yuliyuli.vo.VideoVO;
 
 public class VideoConvertUtil {
@@ -49,5 +52,29 @@ public class VideoConvertUtil {
         pageVideoList.getSize(), pageVideoList.getTotal());
         videoVOPageList.setRecords(convertToVideoVOList);
         return videoVOPageList;
+    }
+
+    public static VideoVO convertMapToVideoVO(Map<Object,Object> map){
+        VideoVO vo = new VideoVO();
+        BeanUtils.copyProperties(map, vo);
+        return vo;
+    }
+
+    /**
+     * 视频文档列表转换为视频VO类列表
+     * @param videoDocumentList 视频文档列表
+     * @return 视频VO类列表
+     */
+    public static List<SearchVideoVO> convertSearchVideoVOList(List<VideoDocument> videoDocumentList){
+        if(videoDocumentList == null){
+            return null;
+        }
+        return videoDocumentList.stream()
+        .map(videoDocument -> {
+            SearchVideoVO topTenVO = new SearchVideoVO();
+            topTenVO.setVideoDocuments(List.of(videoDocument));
+            return topTenVO;
+        })
+        .collect(Collectors.toList());
     }
 }

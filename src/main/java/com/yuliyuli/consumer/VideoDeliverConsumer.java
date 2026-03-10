@@ -1,5 +1,6 @@
 package com.yuliyuli.consumer;
 
+import java.util.Date;
 import java.util.Map;
 import java.util.concurrent.TimeUnit;
 
@@ -11,10 +12,12 @@ import org.springframework.stereotype.Component;
 
 import com.rabbitmq.client.Channel;
 import com.yuliyuli.config.RabbitMqConfig;
+import com.yuliyuli.document.VideoDocument;
 import com.yuliyuli.entity.Video;
 import com.yuliyuli.entity.VideoDelivery;
 import com.yuliyuli.exception.GlobalExceptionHandler;
 import com.yuliyuli.mapper.VideoMapper;
+import com.yuliyuli.repository.VideoRepository;
 import com.yuliyuli.util.TransferUtil;
 
 import cn.ipokerface.snowflake.SnowflakeIdGenerator;
@@ -37,6 +40,9 @@ public class VideoDeliverConsumer {
     @Resource
     private SnowflakeIdGenerator snowflakeIdGenerator;
 
+    @Resource
+    private VideoRepository videoRepository;
+
     /** 
      * 视频队列消费者
      * @param videoDelivery 视频消息
@@ -50,7 +56,7 @@ public class VideoDeliverConsumer {
         }
 
         String userId = videoDelivery.getVideo().getUserId().toString();
-        String videoId = String.valueOf(snowflakeIdGenerator.nextId());
+        Long videoId = snowflakeIdGenerator.nextId();
 
         // 视频锁，确保每个用户每个视频只插入一次
         String lockKey = "video:lock:" + videoId + ":" + userId;
@@ -66,12 +72,18 @@ public class VideoDeliverConsumer {
             return;
         }
         try{
-            videoMapper.insert(videoDelivery.getVideo());
+            videoDelivery.getVideo().setUrl(videoId.toString());
+            if(videoMapper.insert(videoDelivery.getVideo()) != 1){
+                channel.basicNack(deliveryTag, false, false);
+                log.error("用户{}视频{}插入失败", userId, videoId);
+                throw new GlobalExceptionHandler.BusinessException("视频插入失败");
+            }
+            saveVideoToSearchIndex(videoDelivery, videoId);
             // 视频文件存储路径
             String videoPath = transferUtil.saveVideoToDirectory(videoDelivery);   
             if(videoPath == null){
                 channel.basicNack(deliveryTag, false, false);
-                return;
+                throw new GlobalExceptionHandler.BusinessException("视频文件存储失败");
             }
             basicAck(channel, deliveryTag);
         }catch(Exception e){
@@ -148,5 +160,18 @@ public class VideoDeliverConsumer {
             log.error("拒绝消息失败", e);
             throw new GlobalExceptionHandler.BusinessException("REJECT消息失败");
         }
+    }
+
+    public void saveVideoToSearchIndex(VideoDelivery videoDelivery, Long videoId){
+        VideoDocument videoDocument = new VideoDocument();
+        videoDocument.setId(videoId.toString());
+        videoDocument.setTitle(videoDelivery.getVideo().getTitle());
+        videoDocument.setTypeId(videoDelivery.getVideo().getTypeId());
+        videoDocument.setUrl(videoDelivery.getVideo().getUrl());
+        videoDocument.setPlayCount(0);
+        videoDocument.setCreateTime(new Date());
+        videoDocument.setUserId(videoDelivery.getVideo().getUserId());
+        videoDocument.setAuthorName(videoDelivery.getVideo().getAuthorName());
+        videoRepository.save(videoDocument);
     }
 }

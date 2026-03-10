@@ -17,14 +17,14 @@ import com.yuliyuli.entity.VideoCollection;
 import com.yuliyuli.entity.VideoDelivery;
 import com.yuliyuli.entity.VideoLike;
 import com.yuliyuli.exception.GlobalExceptionHandler;
-import com.yuliyuli.init.InitVideoInfo;
+import com.yuliyuli.init.VideoInfoInit;
 import com.yuliyuli.mapper.VideoMapper;
 
 import lombok.extern.slf4j.Slf4j;
 
+import java.time.Duration;
 import java.util.List;
 import java.util.concurrent.ExecutorService;
-import java.util.concurrent.TimeUnit;
 
 import org.redisson.api.RBucket;
 import org.redisson.api.RedissonClient;
@@ -137,7 +137,7 @@ public class VideoServiceImpl implements VideoService {
     }
 
     /**
-     * 获取视频列表
+     * 获取视频列表,让前端获取视频，用于主页懒加载视频
      * @param pageNum 页码
      * @param pageSize 每页数量
      * @return 视频列表
@@ -145,7 +145,7 @@ public class VideoServiceImpl implements VideoService {
     @Override
     public Page<VideoVO> getVideoList(int pageNum, int pageSize) {
         // 从缓存中获取视频列表
-        String listKey = InitVideoInfo.VIDEO_LIST_CACHE_KEY + pageNum;
+        String listKey = VideoInfoInit.VIDEO_LIST_CACHE_KEY + pageNum;
         RBucket<List<Video>> listBucket = redissonClient.getBucket(listKey);
         if(listBucket.isExists()){
             List<Video> videoList = listBucket.get();
@@ -161,10 +161,11 @@ public class VideoServiceImpl implements VideoService {
         log.info("从数据库中获取视频列表,页码:{}", pageNum);
         Page<Video> page = videoMapper.selectPage(new Page<>(pageNum, pageSize), 
         videoWrapper.getInitVideo());
+        Duration expireDuration = Duration.ofHours(VideoInfoInit.EXPIRE_TIME);
         // 缓存到redis
         if(page.getRecords() != null && !page.getRecords().isEmpty()){
             listBucket.set(page.getRecords(), 
-            InitVideoInfo.EXPIRE_TIME, TimeUnit.HOURS);
+            expireDuration);
         }
         // 转换为视频VO类列表
         Page<VideoVO> videoVOPageList = VideoConvertUtil.converToVideoVOList(page);
