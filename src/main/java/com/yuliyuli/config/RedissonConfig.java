@@ -10,24 +10,22 @@ import org.springframework.context.annotation.Configuration;
 @Configuration
 public class RedissonConfig {
 
-    @Value("${spring.data.redis.host:localhost}")
-    private String host;
+  @Value("${spring.data.redis.host:localhost}")
+  private String host;
 
-    @Value("${spring.data.redis.port:6379}")
-    private int port;
+  @Value("${spring.data.redis.port:6379}")
+  private int port;
 
-    @Value("${spring.data.redis.database:0}")
-    private int database;
+  @Value("${spring.data.redis.database:0}")
+  private int database;
 
-    @Bean
-    public RedissonClient redissonClient() {
-        Config config = new Config();
-        String redisAddress = "redis://" + host + ":" + port;
-        
-        config.useSingleServer()
-                .setAddress(redisAddress)
-                .setDatabase(database);
+  @Bean
+  public RedissonClient redissonClient() {
+    Config config = new Config();
+    String redisAddress = "redis://" + host + ":" + port;
 
-        return Redisson.create(config);
-    }
+    config.useSingleServer().setAddress(redisAddress).setDatabase(database);
+
+    return Redisson.create(config);
+  }
 }

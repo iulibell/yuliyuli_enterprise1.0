@@ -1,14 +1,14 @@
 package com.yuliyuli.vo;
 
 import com.yuliyuli.entity.User;
-
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Data;
 
 @Data
 public class LoginVO {
-    @Schema(description = "登录凭证")
-    private String token;
-    @Schema(description = "用户信息")
-    private User user;
+  @Schema(description = "登录凭证")
+  private String token;
+
+  @Schema(description = "用户信息")
+  private User user;
 }

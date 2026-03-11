@@ -1,17 +1,15 @@
 package com.yuliyuli.document;
 
 import java.util.Date;
-
+import lombok.AllArgsConstructor;
+import lombok.Data;
+import lombok.NoArgsConstructor;
 import org.springframework.data.annotation.Id;
 import org.springframework.data.elasticsearch.annotations.Document;
 import org.springframework.data.elasticsearch.annotations.Field;
 import org.springframework.data.elasticsearch.annotations.FieldType;
-import org.springframework.data.elasticsearch.annotations.MultiField;
 import org.springframework.data.elasticsearch.annotations.InnerField;
-
-import lombok.AllArgsConstructor;
-import lombok.Data;
-import lombok.NoArgsConstructor;
+import org.springframework.data.elasticsearch.annotations.MultiField;
 
 // 存入ES的视频文档
 @Document(indexName = "video")
@@ -19,37 +17,40 @@ import lombok.NoArgsConstructor;
 @AllArgsConstructor
 @NoArgsConstructor
 public class VideoDocument {
-    @Id
-    private String id;
 
-    @MultiField(
-        mainField = @Field(type = FieldType.Text, analyzer = "ik_max_word"),
-        otherFields = @InnerField(suffix = "suggest", type = FieldType.Text, analyzer = "video_suggest_analyzer")
-    )
-    private String title;
+  @Id private String id;
 
-    // 作者Id，用于点击作者名字后进行作者主页跳转
-    @Field(type = FieldType.Integer)
-    private Long userId;
+  @MultiField(
+      mainField = @Field(type = FieldType.Text, analyzer = "ik_max_word"),
+      otherFields =
+          @InnerField(
+              suffix = "suggest",
+              type = FieldType.Text,
+              analyzer = "video_suggest_analyzer"))
+  private String title;
 
-    @Field(type = FieldType.Text)
-    private String authorName;
+  // 作者Id，用于点击作者名字后进行作者主页跳转
+  @Field(type = FieldType.Integer)
+  private Long userId;
 
-    // 视频url
-    @Field(type = FieldType.Text)
-    private String url;
+  @Field(type = FieldType.Text)
+  private String authorName;
 
-    // 视频封面url
-    @Field(type = FieldType.Text)
-    private String coverUrl;
+  // 视频url
+  @Field(type = FieldType.Text)
+  private String url;
 
-    //点击搜索后的视频会根据type_id显示出其他同一typeId的视频
-    @Field(type = FieldType.Integer)
-    private Integer typeId;
+  // 视频封面url
+  @Field(type = FieldType.Text)
+  private String coverUrl;
 
-    @Field(type = FieldType.Integer)
-    private Integer playCount;
+  // 点击搜索后的视频会根据type_id显示出其他同一typeId的视频
+  @Field(type = FieldType.Integer)
+  private Integer typeId;
 
-    @Field(type = FieldType.Date)
-    private Date createTime;
+  @Field(type = FieldType.Integer)
+  private Integer playCount;
+
+  @Field(type = FieldType.Date)
+  private Date createTime;
 }

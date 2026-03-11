@@ -1,70 +1,90 @@
 package com.yuliyuli.consumer;
 
+import com.rabbitmq.client.Channel;
+import com.yuliyuli.config.RabbitMqConfig;
+import com.yuliyuli.exception.GlobalExceptionHandler;
+import jakarta.annotation.Resource;
 import java.util.Map;
-
+import lombok.extern.slf4j.Slf4j;
 import org.redisson.api.RedissonClient;
 import org.springframework.amqp.core.Message;
 import org.springframework.amqp.rabbit.annotation.RabbitListener;
 import org.springframework.stereotype.Component;
 
-import com.rabbitmq.client.Channel;
-import com.yuliyuli.config.RabbitMqConfig;
-import com.yuliyuli.exception.GlobalExceptionHandler;
-
-import jakarta.annotation.Resource;
-import lombok.extern.slf4j.Slf4j;
-
 @Component
 @Slf4j
 public class VideoPlayConsumer {
 
-    @Resource
-    private RedissonClient redissonClient;
+  @Resource private RedissonClient redissonClient;
 
-    @RabbitListener(queues = RabbitMqConfig.PLAY_QUEUE_NAME)
-    public void videoPlay(String videoUrl, Channel channel, Message mqMessage) {
-        Long deliveryTag = mqMessage.getMessageProperties().getDeliveryTag();
+  @RabbitListener(queues = RabbitMqConfig.PLAY_QUEUE_NAME)
+  public void videoPlay(String videoUrl, Channel channel, Message mqMessage) {
 
-        if(videoUrl == null) {
-            log.error("视频URL为空");
-            throw new GlobalExceptionHandler.BusinessException("视频URL为空");
-        }
+    Long deliveryTag = mqMessage.getMessageProperties().getDeliveryTag();
 
-        final String DELAY_KEY = "video:play:delay";
-        final int DELAY_TIME = 1000 * 5; // 5秒
-
-        try{
-            redissonClient.getScoredSortedSet(DELAY_KEY)
-                .add(System.currentTimeMillis() + DELAY_TIME, videoUrl);            
-            // 播放完成后，手动确认消息
-            basicAck(deliveryTag, channel);
-        }catch(Exception e){
-            log.error("视频播放锁获取失败", e);
-            throw new GlobalExceptionHandler.BusinessException("视频播放锁获取失败");
-        }
+    if (videoUrl == null) {
+      log.error("视频URL为空");
+      throw new GlobalExceptionHandler.BusinessException("视频URL为空");
     }
 
-    public void basicAck(Long deliveryTag, Channel channel){
-        try{
-            channel.basicAck(deliveryTag, false);
-        }catch(Exception e){
-            log.error("ACK播放失败", e);
-            throw new GlobalExceptionHandler.BusinessException("ACK播放失败");
-        }
-    }
+    final String DELAY_KEY = "video:play:delay";
+    final int DELAY_TIME = 1000 * 5; // 5秒
 
-    public void basicNack(Long deliveryTag, Channel channel, int retryCount, Map<String,Object> headers){
-        try{
-            if(retryCount < 3){
-                headers.put("play-retry-count", retryCount + 1);
-                channel.basicNack(deliveryTag, false, true);
-            }
-            if(retryCount >= 3){
-                channel.basicNack(deliveryTag, false, false);
-            }
-        }catch(Exception e){
-            log.error("NACK播放失败", e);
-            throw new GlobalExceptionHandler.BusinessException("NACK播放失败");
-        }
+    try {
+      redissonClient
+          .getScoredSortedSet(DELAY_KEY)
+          .add(System.currentTimeMillis() + DELAY_TIME, videoUrl);
+      // 播放完成后，手动确认消息
+      basicAck(deliveryTag, channel);
+    } catch (Exception e) {
+      log.error("视频播放锁获取失败", e);
+      throw new GlobalExceptionHandler.BusinessException("视频播放锁获取失败");
     }
+  }
+
+  @RabbitListener(queues = RabbitMqConfig.PLAY_DEAD_QUEUE_NAME)
+  public void videoPlayDeadConsumer(String videoUrl, Channel channel, Message mqMessage) {
+
+    log.info("播放死信消费者,视频URL:{}", videoUrl);
+    Long diliverTag = mqMessage.getMessageProperties().getDeliveryTag();
+
+    Map<String, Object> headers = mqMessage.getMessageProperties().getHeaders();
+    Integer retryCount = (Integer) headers.getOrDefault("x-retry-count", 0);
+
+    try {
+      log.error("播放死信队列消费者,视频URL:{}", videoUrl);
+    } catch (Exception e) {
+      try {
+        basicNack(diliverTag, channel, retryCount, headers);
+      } catch (Exception e2) {
+        log.error("确认播放失败", e2);
+        throw new GlobalExceptionHandler.BusinessException("确认播放失败");
+      }
+    }
+  }
+
+  public void basicAck(Long deliveryTag, Channel channel) {
+    try {
+      channel.basicAck(deliveryTag, false);
+    } catch (Exception e) {
+      log.error("ACK播放失败", e);
+      throw new GlobalExceptionHandler.BusinessException("ACK播放失败");
+    }
+  }
+
+  public void basicNack(
+      Long deliveryTag, Channel channel, int retryCount, Map<String, Object> headers) {
+    try {
+      if (retryCount < 3) {
+        headers.put("play-retry-count", retryCount + 1);
+        channel.basicNack(deliveryTag, false, true);
+      }
+      if (retryCount >= 3) {
+        channel.basicNack(deliveryTag, false, false);
+      }
+    } catch (Exception e) {
+      log.error("NACK播放失败", e);
+      throw new GlobalExceptionHandler.BusinessException("NACK播放失败");
+    }
+  }
 }
