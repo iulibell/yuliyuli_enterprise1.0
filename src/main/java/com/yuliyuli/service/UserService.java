@@ -1,10 +1,10 @@
 package com.yuliyuli.service;
 
-import com.yuliyuli.entity.User;
-import com.yuliyuli.vo.LoginVO;
-import com.yuliyuli.vo.UpdateUserInfoVO;
 import java.util.Date;
 
+import com.yuliyuli.vo.LoginVO;
+
+// 用户服务接口
 public interface UserService {
   /**
    * 登录
@@ -30,7 +30,7 @@ public interface UserService {
    * @param code 验证码
    * @return 用户信息
    */
-  User register(String account, String code, String password);
+  String register(String phone, String code, String password);
 
   /**
    * 修改信息
@@ -40,5 +40,5 @@ public interface UserService {
    * @param sign 签名
    * @return 用户信息
    */
-  UpdateUserInfoVO modifyInfo(short gender, Date birthday, String sign);
+  String modifyInfo(short gender, Date birthday, String sign);
 }

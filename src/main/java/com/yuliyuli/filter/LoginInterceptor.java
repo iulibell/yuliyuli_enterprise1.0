@@ -45,12 +45,17 @@ public class LoginInterceptor implements HandlerInterceptor {
       }
 
       UserHolder.setUser(user);
-      Claims claims = jwtUtil.parseToken(token);
-      request.setAttribute("userId", claims.get("userId"));
-      log.info("【登录拦截器】Token校验成功,用户ID:{}，请求路径:{}", claims.get("userId"), request.getRequestURI());
-      return true;
+      try {
+        Claims claims = jwtUtil.parseToken(token);
+        request.setAttribute("userId", claims.get("userId"));
+        log.info("【登录拦截器】Token校验成功,用户ID:{}，请求路径:{}", claims.get("userId"), request.getRequestURI());
+        return true;
+      } catch (Exception e) {
+        log.error("【登录拦截器】解析Token失败,请求路径:{}，异常信息:{}", request.getRequestURI(), e.getMessage(), e);
+        return handleError(response, Result.fail(401, "Token解析失败,请重新登录"));
+      }
     } catch (Exception e) {
-      log.error("【登录拦截器】处理请求时发生异常，请求路径：{}，异常信息：{}", request.getRequestURI(), e.getMessage(), e);
+      log.error("【登录拦截器】处理请求时发生异常,请求路径:{}，异常信息:{}", request.getRequestURI(), e.getMessage(), e);
       return handleError(response, Result.fail(500, "服务器内部错误"));
     }
   }
@@ -65,5 +70,19 @@ public class LoginInterceptor implements HandlerInterceptor {
       writer.flush();
     }
     return false;
+  }
+
+  /**
+   * 请求处理完成后，清除用户信息
+   * @param request 请求
+   * @param response 响应
+   * @param handler 处理程序
+   * @param ex 异常
+   */
+  @Override
+  public void afterCompletion(HttpServletRequest request, HttpServletResponse response, 
+        Object handler, Exception e) {
+    // 请求处理完成后，清除用户信息
+    UserHolder.removeUser();
   }
 }

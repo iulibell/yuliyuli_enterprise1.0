@@ -26,7 +26,8 @@ public class User {
   @Parameter(name = "账号")
   @NotBlank(message = "账号不能为空")
   @Size(min = 10, max = 10, message = "账号长度必须为10位")
-  private String account;
+  // b站手机号和账号是共用的，所以这里用phone表示
+  private String phone;
 
   @Parameter(name = "密码")
   @NotBlank(message = "密码不能为空")

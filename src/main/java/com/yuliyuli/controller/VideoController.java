@@ -79,13 +79,13 @@ public class VideoController {
           VideoDelivery video) {
     checkLogin();
     try {
-      videoService.videoDeliver(video);
+      String message = videoService.videoDeliver(video);
       log.info("视频投递成功,视频ID:{}", video.getVideo().getUrl());
+      return Result.success(message);
     } catch (Exception e) {
       log.error("视频投递失败", e);
-      throw new GlobalExceptionHandler.BusinessException("视频投递失败");
+      return Result.fail("视频上传失败,请稍后重试");
     }
-    return Result.success("上传成功");
   }
 
   @RateLimit(limit = 10, window = 60, key = "like")
@@ -96,13 +96,13 @@ public class VideoController {
           VideoLike videoLike) {
     checkLogin();
     try {
-      videoService.videoLike(videoLike);
+      String message = videoService.videoLike(videoLike);
       log.info("视频点赞成功,视频ID:{},用户ID:{}", videoLike.getVideoId(), videoLike.getUserId());
+      return Result.success(message);
     } catch (Exception e) {
       log.error("视频点赞失败", e);
-      throw new GlobalExceptionHandler.BusinessException("视频点赞失败");
+      return Result.fail("视频点赞失败,请稍后重试");
     }
-    return Result.success();
   }
 
   /**
@@ -119,13 +119,13 @@ public class VideoController {
           VideoCollection videoCollect) {
     checkLogin();
     try {
-      videoService.videoCollect(videoCollect);
+      String message = videoService.videoCollect(videoCollect);
       log.info("视频收藏成功,视频ID:{},用户ID:{}", videoCollect.getVideoId(), videoCollect.getUserId());
+      return Result.success(message); 
     } catch (Exception e) {
       log.error("视频收藏失败", e);
-      throw new GlobalExceptionHandler.BusinessException("视频收藏失败");
+      return Result.fail("视频收藏失败,请稍后重试");
     }
-    return Result.success("收藏成功");
   }
 
   /**
@@ -141,13 +141,13 @@ public class VideoController {
       @Parameter(description = "传递的评论对象", required = true) @RequestBody Comment comment) {
     checkLogin();
     try {
-      videoService.videoComment(comment);
+      String message = videoService.videoComment(comment);
       log.info("视频评论成功,视频ID:{},用户ID:{}", comment.getVideoId(), comment.getUserId());
+      return Result.success(message);
     } catch (Exception e) {
       log.error("视频评论失败", e);
-      throw new GlobalExceptionHandler.BusinessException("视频评论失败");
+      return Result.fail("视频评论失败,请稍后重试");
     }
-    return Result.success("评论成功");
   }
 
   /**

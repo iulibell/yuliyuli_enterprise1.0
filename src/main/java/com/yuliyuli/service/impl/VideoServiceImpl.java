@@ -65,20 +65,22 @@ public class VideoServiceImpl implements VideoService {
    * @param video 视频信息
    */
   @Override
-  public void videoDeliver(VideoDelivery videoDelivery) {
+  public String videoDeliver(VideoDelivery videoDelivery) {
     threadPoolExecutor.submit(
         () -> {
           User user = UserHolder.getUser();
           if (user == null) {
-            throw new GlobalExceptionHandler.BusinessException("请完成登录");
+            return "请完成登录";
           }
           try {
             rabbitTemplate.convertAndSend(RabbitMqConfig.VIDEO_QUEUE_NAME, videoDelivery);
           } catch (Exception e) {
             log.error("视频分发失败", e);
-            throw new GlobalExceptionHandler.BusinessException("视频分发失败");
+            return "视频上传失败";
           }
+          return "视频上传成功";
         });
+      return "视频上传成功";
   }
 
   /**
@@ -87,20 +89,22 @@ public class VideoServiceImpl implements VideoService {
    * @param videoLike 视频点赞对象
    */
   @Override
-  public void videoLike(VideoLike videoLike) {
+  public String videoLike(VideoLike videoLike) {
     threadPoolExecutor.submit(
         () -> {
           User user = UserHolder.getUser();
           if (user == null) {
-            throw new GlobalExceptionHandler.BusinessException("请完成登录");
+            return "请完成登录";
           }
           try {
             rabbitTemplate.convertAndSend(RabbitMqConfig.LIKE_QUEUE_NAME, videoLike);
           } catch (Exception e) {
             log.error("视频点赞失败", e);
-            throw new GlobalExceptionHandler.BusinessException("视频点赞失败");
+            return "视频点赞失败";
           }
+          return "点赞成功";
         });
+    return "点赞成功";
   }
 
   /**
@@ -109,20 +113,22 @@ public class VideoServiceImpl implements VideoService {
    * @param videoCollect 视频收藏对象
    */
   @Override
-  public void videoCollect(VideoCollection videoCollection) {
+  public String videoCollect(VideoCollection videoCollection) {
     threadPoolExecutor.submit(
         () -> {
           User user = UserHolder.getUser();
           if (user == null) {
-            throw new GlobalExceptionHandler.BusinessException("请完成登录");
+            return "请完成登录";
           }
           try {
             rabbitTemplate.convertAndSend(RabbitMqConfig.COLLECT_QUEUE_NAME, videoCollection);
           } catch (Exception e) {
             log.error("视频收藏失败", e);
-            throw new GlobalExceptionHandler.BusinessException("视频收藏失败");
+            return "视频收藏失败";
           }
+          return "收藏成功";
         });
+    return "收藏成功";
   }
 
   /**
@@ -131,20 +137,22 @@ public class VideoServiceImpl implements VideoService {
    * @param comment 视频评论对象
    */
   @Override
-  public void videoComment(Comment comment) {
+  public String videoComment(Comment comment) {
     threadPoolExecutor.submit(
         () -> {
           User user = UserHolder.getUser();
           if (user == null) {
-            throw new GlobalExceptionHandler.BusinessException("请完成登录");
+            return "请完成登录";
           }
           try {
             rabbitTemplate.convertAndSend(RabbitMqConfig.COMMENT_QUEUE_NAME, comment);
           } catch (Exception e) {
             log.error("视频评论失败", e);
-            throw new GlobalExceptionHandler.BusinessException("视频评论失败");
+            return "视频评论失败";
           }
+          return "评论成功";
         });
+    return "评论成功";
   }
 
   /**
@@ -153,16 +161,18 @@ public class VideoServiceImpl implements VideoService {
    * @param videoUrl 视频URL
    */
   @Override
-  public void hotVideoPlay(String videoUrl) {
+  public String hotVideoPlay(String videoUrl) {
     threadPoolExecutor.submit(
         () -> {
           try {
             rabbitTemplate.convertAndSend(RabbitMqConfig.HOT_PLAY_QUEUE_NAME, videoUrl);
           } catch (Exception e) {
             log.error("视频播放失败", e);
-            throw new GlobalExceptionHandler.BusinessException("视频播放失败");
+            return "视频播放失败";
           }
+          return "";
         });
+    return "";
   }
 
   /**
@@ -171,16 +181,18 @@ public class VideoServiceImpl implements VideoService {
    * @param videoUrl 视频URL
    */
   @Override
-  public void videoPlay(String videoUrl) {
+  public String videoPlay(String videoUrl) {
     threadPoolExecutor.submit(
         () -> {
           try {
             rabbitTemplate.convertAndSend(RabbitMqConfig.PLAY_QUEUE_NAME, videoUrl);
           } catch (Exception e) {
             log.error("视频播放失败", e);
-            throw new GlobalExceptionHandler.BusinessException("视频播放失败");
+            return "视频播放失败";
           }
+          return "";
         });
+    return "";
   }
 
   /*=======================================================👇get方法============================================================= */

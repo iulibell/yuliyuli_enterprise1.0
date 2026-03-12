@@ -10,7 +10,7 @@ public interface VideoRepository extends ElasticsearchRepository<VideoDocument, 
   @Query(
       "{"
           + "  \"match\": {"
-          + "    \"title.suggest\": {"
+          + "    \"title\": {"
           + "      \"query\": \"?0\", "
           + "      \"operator\": \"and\""
           + "    }"

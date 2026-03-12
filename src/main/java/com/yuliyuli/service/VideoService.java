@@ -16,28 +16,28 @@ public interface VideoService {
    *
    * @param video 视频对象
    */
-  void videoDeliver(VideoDelivery videoDelivery);
+  String videoDeliver(VideoDelivery videoDelivery);
 
   /**
    * 视频点赞
    *
    * @param videoLike 视频点赞对象
    */
-  void videoLike(VideoLike videoLike);
+  String videoLike(VideoLike videoLike);
 
   /**
    * 视频收藏
    *
    * @param videoCollect 视频收藏对象
    */
-  void videoCollect(VideoCollection videoCollect);
+  String videoCollect(VideoCollection videoCollect);
 
   /**
    * 视频评论
    *
    * @param comment 视频评论对象
    */
-  void videoComment(Comment comment);
+  String videoComment(Comment comment);
 
   /**
    * 获取视频列表
@@ -68,12 +68,12 @@ public interface VideoService {
    *
    * @param videoUrl 视频URL
    */
-  void hotVideoPlay(String videoUrl);
+  String hotVideoPlay(String videoUrl);
 
   /**
    * 用户点击普通视频播放视频，发送至消费者进行播放统计
    *
    * @param videoUrl 视频URL
    */
-  void videoPlay(String videoUrl);
+  String videoPlay(String videoUrl);
 }

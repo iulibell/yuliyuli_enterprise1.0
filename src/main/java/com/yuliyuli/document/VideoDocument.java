@@ -8,8 +8,6 @@ import org.springframework.data.annotation.Id;
 import org.springframework.data.elasticsearch.annotations.Document;
 import org.springframework.data.elasticsearch.annotations.Field;
 import org.springframework.data.elasticsearch.annotations.FieldType;
-import org.springframework.data.elasticsearch.annotations.InnerField;
-import org.springframework.data.elasticsearch.annotations.MultiField;
 
 // 存入ES的视频文档
 @Document(indexName = "video")
@@ -20,13 +18,7 @@ public class VideoDocument {
 
   @Id private String id;
 
-  @MultiField(
-      mainField = @Field(type = FieldType.Text, analyzer = "ik_max_word"),
-      otherFields =
-          @InnerField(
-              suffix = "suggest",
-              type = FieldType.Text,
-              analyzer = "video_suggest_analyzer"))
+  @Field(type = FieldType.Text, analyzer = "ik_max_word")
   private String title;
 
   // 作者Id，用于点击作者名字后进行作者主页跳转

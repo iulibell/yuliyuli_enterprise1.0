@@ -24,6 +24,12 @@ import org.springframework.stereotype.Component;
 @Slf4j
 public class CommentConsumer {
 
+  private final String RETRY_HEADER = "comment-retry-count";
+  private static final String LOCK_KEY_PREFIX = "comment:lock:";
+  private static final int MAX_RETRY_COUNT = 3;
+  private static final int LOCK_WAIT = 3; // 3秒
+  private static final int LOCK_RELEASE = 10; // 10秒
+
   @Resource private RedissonClient redissonClient;
 
   @Resource private CommentMapper commentMapper;
@@ -38,30 +44,29 @@ public class CommentConsumer {
   public void commentConsumer(Comment comment, Channel channel, Message mqMessage)
       throws Exception {
     Long deliveryTag = mqMessage.getMessageProperties().getDeliveryTag();
-    RLock lock = null;
-
-    final String LOCK_KEY_PREFIX = "comment:lock:";
-
-    if (comment == null || comment.getUserId() == null) {
+    // 参数校验
+    if(comment == null || comment.getVideoId() == null || comment.getUserId() == null) {
       channel.basicReject(deliveryTag, false);
+      log.warn("评论消息为空,在评论消费者丢弃");
       return;
     }
-
-    // 从消息头中获取重试次数,如果没有则默认0
+    //重试次数,从消息头中获取重试次数,如果没有则默认0
     Map<String, Object> headers = mqMessage.getMessageProperties().getHeaders();
-    Integer retryCount = (Integer) headers.getOrDefault("x-retry-count", 0);
-
+    Integer retryCount = (Integer) headers.getOrDefault(RETRY_HEADER, 0);
+    // 锁: 每个用户评论时,加锁,防止并发评论
+    String lockKey = LOCK_KEY_PREFIX + comment.getUserId();
+    RLock lock = redissonClient.getLock(lockKey);
     // 使用雪花算法生成评论id
     Long commentId = snowflakeIdGenerator.nextId();
-    String lockKey = LOCK_KEY_PREFIX + comment.getUserId();
-    lock = redissonClient.getLock(lockKey);
-    boolean isLock = lock.tryLock(3, 10, TimeUnit.SECONDS);
-    if (!isLock) {
-      channel.basicNack(deliveryTag, false, true);
-      log.info("用户{}评论锁被其他线程占用,已重新放入队列", comment.getUserId());
-      return;
-    }
+
     try {
+      // 尝试加锁,如果3秒内没有加锁成功,则重新放入队列
+      boolean isLock = lock.tryLock(LOCK_WAIT, LOCK_RELEASE, TimeUnit.SECONDS);
+      if (!isLock) {
+        channel.basicNack(deliveryTag, false, true);
+        log.info("用户{}评论锁被其他线程占用,已重新放入队列", comment.getUserId());
+        return;
+      }
       LambdaQueryWrapper<Video> getCommentCountWrapper =
           videoWrapper.getCommentCount(comment.getVideoId().toString());
       comment.setCommentId(commentId);
@@ -69,15 +74,15 @@ public class CommentConsumer {
       int commentCount =
           Integer.valueOf(videoMapper.selectById(getCommentCountWrapper).getCommentCount());
       videoMapper.updateVideoCommentCount(commentCount, comment.getVideoId().toString());
+      // 评论成功后,手动确认消息
       channel.basicAck(deliveryTag, false);
+      log.info("评论成功,评论ID:{}", commentId);
     } catch (Exception e) {
       try {
-        basicNack(deliveryTag, channel, retryCount, headers);
+        channel.basicAck(deliveryTag, false);
       } catch (Exception e2) {
-        Long userId = comment.getUserId() != null ? comment.getUserId() : 0L;
-        String videoId = comment.getVideoId() != null ? comment.getVideoId().toString() : "";
-        log.error("评论队列消费者异常,用户ID:{} 视频ID:{},重试次数:{}", userId, videoId, retryCount, e2);
-        throw new GlobalExceptionHandler.BusinessException("评论失败");
+        log.error("评论消费异常,retry={}", retryCount, e2);
+        handleRetry(deliveryTag, channel, retryCount, headers);
       }
     } finally {
       if (lock != null && lock.isHeldByCurrentThread()) {
@@ -87,47 +92,47 @@ public class CommentConsumer {
     }
   }
 
+  /**
+   * 死信队列（记录+警告）
+   * @param comment
+   * @param channel
+   * @param mqMessage
+   * @throws Exception
+   */
   @RabbitListener(queues = RabbitMqConfig.COMMENT_DEAD_QUEUE_NAME)
   public void commentDeadConsumer(Comment comment, Channel channel, Message mqMessage)
       throws Exception {
-    log.info("评论死信消费者");
     Long deliveryTag = mqMessage.getMessageProperties().getDeliveryTag();
-    try {
-      String userId = comment.getUserId() != null ? comment.getUserId().toString() : "";
-      String videoId = comment.getVideoId() != null ? comment.getVideoId().toString() : "";
-      log.info("评论死信消费者,用户ID:{} 视频ID:{}", userId, videoId);
-    } catch (Exception e) {
-      try {
-        channel.basicNack(deliveryTag, false, false);
-      } catch (Exception e2) {
-        log.error("确认评论失败");
-        throw new GlobalExceptionHandler.BusinessException("确认评论失败");
-      }
-    }
-  }
-
-  public void basicAck(Long deliveryTag, Channel channel) {
+    log.info("死信队列收到失败评论,评论ID:{}", comment.getCommentId());
     try {
       channel.basicAck(deliveryTag, false);
     } catch (Exception e) {
-      log.error("ACK评论失败", e);
-      throw new GlobalExceptionHandler.BusinessException("ACK评论失败");
+      log.error("死信队列丢弃失败评论失败,评论ID:{}", comment.getCommentId(), e);
+      throw new GlobalExceptionHandler.BusinessException("死信队列丢弃失败评论失败");
     }
   }
 
-  public void basicNack(
-      Long deliveryTag, Channel channel, int retryCount, Map<String, Object> headers) {
-    try {
-      if (retryCount < 3) {
-        headers.put("comment-retry-count", retryCount + 1);
+  /**
+   * 处理重试
+   * @param deliveryTag 消息标签
+   * @param channel 通道
+   * @param retryCount 重试次数
+   * @param headers 消息头
+   */
+  private void handleRetry(Long deliveryTag, Channel channel, Integer retryCount, Map<String, Object> headers) {
+    if (retryCount < MAX_RETRY_COUNT) {
+      headers.put(RETRY_HEADER, retryCount + 1);
+      try {
         channel.basicNack(deliveryTag, false, true);
+      } catch (Exception e) {
+        log.error("重试评论消息失败,重试次数:{}", retryCount + 1, e);
       }
-      if (retryCount >= 3) {
-        channel.basicNack(deliveryTag, false, false);
+    } else {
+      try {
+        channel.basicReject(deliveryTag, false);
+      } catch (Exception e) {
+        log.error("评论消息重试次数超过最大重试次数,已丢弃,重试次数:{}", retryCount, e);
       }
-    } catch (Exception e) {
-      log.error("NACK评论失败", e);
-      throw new GlobalExceptionHandler.BusinessException("NACK评论失败");
     }
   }
 }

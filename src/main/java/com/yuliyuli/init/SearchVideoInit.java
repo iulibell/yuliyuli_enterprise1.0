@@ -3,7 +3,6 @@ package com.yuliyuli.init;
 import com.yuliyuli.document.VideoDocument;
 import jakarta.annotation.Resource;
 import java.util.List;
-import java.util.Map;
 import java.util.Random;
 import java.util.Set;
 import java.util.concurrent.TimeUnit;
@@ -29,7 +28,7 @@ public class SearchVideoInit implements CommandLineRunner {
   public static final String HOT_TOP_KEY = "video:hot:top";
   // 缓存的所有热门视频，100条，用于处理前十热门视频的过期
   public static final String HOT_ALL_KEY = "video:hot:all:";
-  // 缓存的热门视频过期时间，随机10-20小时
+  // 缓存的热门视频过期时间，11小时
   private static final int EXPIRE_TIME = 11;
 
   @Resource private ElasticsearchOperations elasticsearchOperations;
@@ -53,36 +52,13 @@ public class SearchVideoInit implements CommandLineRunner {
   }
 
   public void createIndex(IndexOperations indexOps) {
-    Map<String, Object> settings =
-        Map.of(
-            "number_of_shards", 1,
-            "number_of_replicas", 0,
-            "analysis",
-                Map.of(
-                    // 1. 配置ngram分词器（核心：拆分字符为n-gram）
-                    "analyzer",
-                        Map.of(
-                            // 用于联想的分词器：最小2个字符，最大10个字符
-                            "video_suggest_analyzer",
-                                Map.of(
-                                    "type", "custom",
-                                    "tokenizer", "video_ngram_tokenizer",
-                                    "filter", "lowercase" // 小写化，避免大小写敏感
-                                    ),
-                            // 保留IK分词器（用于全文搜索）
-                            "ik_max_word", Map.of("type", "ik_max_word")),
-                    // 2. 配置ngram分词器的tokenizer
-                    "tokenizer",
-                        Map.of(
-                            "video_ngram_tokenizer",
-                            Map.of(
-                                "type", "ngram",
-                                "min_gram", 2, // 最小拆分长度（输入2个字符开始联想）
-                                "max_gram", 10 // 最大拆分长度
-                                ))));
-    indexOps.create(settings);
-    indexOps.putMapping();
-    log.info("搜索视频索引创建成功");
+    // 使用注解中的配置创建索引和mapping
+    boolean created = indexOps.createWithMapping();
+    if (created) {
+      log.info("搜索视频索引创建成功");
+    } else {
+      log.error("索引创建失败");
+    }
   }
 
   /** 同步视频数据到Redis */

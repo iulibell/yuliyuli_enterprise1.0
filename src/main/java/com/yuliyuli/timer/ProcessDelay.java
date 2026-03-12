@@ -175,7 +175,7 @@ public class ProcessDelay {
 
   @Scheduled(fixedRate = 5000) // 每5秒检查一次
   @Async
-  private void processDelayDelete() {
+  protected void processDelayDelete() {
     String delayKey = "video:delete:delay";
     long currentTime = System.currentTimeMillis();
     // 从有序集合获取所有到期的 videoUrl

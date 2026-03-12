@@ -1,6 +1,9 @@
 package com.yuliyuli.config;
 
 import java.util.Arrays;
+import java.util.HashMap;
+import java.util.Map;
+
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
@@ -14,9 +17,15 @@ import org.springframework.web.cors.CorsConfigurationSource;
 import org.springframework.web.cors.CorsUtils;
 import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
 
+import com.alibaba.fastjson2.JSON;
+
 @Configuration
 @EnableWebSecurity
 public class SecurityConfig {
+  
+  /**
+   * 密码编码器
+   */
   @Bean
   public PasswordEncoder passwordEncoder() {
     return new BCryptPasswordEncoder();
@@ -25,19 +34,20 @@ public class SecurityConfig {
   @Bean
   public SecurityFilterChain securityFilterChain(HttpSecurity httpSecurity) throws Exception {
     httpSecurity
-        .
         // 禁用Session（JWT不需要Session，避免会话固定攻击）
-        sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
+        .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
+        // 禁用CSRF（JWT不需要CSRF，因为它不依赖于Cookie）
         .csrf(csrf -> csrf.disable())
         .cors(cors -> cors.configurationSource(corsConfigurationSource()))
+        .httpBasic(httpBasic -> httpBasic.disable())
         .authorizeHttpRequests(
             authorize ->
                 authorize
                     .requestMatchers(CorsUtils::isPreFlightRequest)
                     .permitAll()
-                    .requestMatchers("/user/login", "/user/register")
+                    .requestMatchers("/user/login", "/user/register", "/user/logout")
                     .permitAll()
-                    .requestMatchers("/video/list", "/video/detail", "/comment/list")
+                    .requestMatchers("/video/list", "/video/detail")
                     .permitAll()
                     .anyRequest()
                     .authenticated())
@@ -53,11 +63,15 @@ public class SecurityConfig {
                         })
                     .accessDeniedHandler(
                         (request, response, accessDeniedException) -> {
+                          Map<String, Object> map = new HashMap<>();
+                          map.put("code", 403);
+                          map.put("msg", "未登录或Token已过期");
+                          map.put("data", null);
                           // 无权限时，返回统一的403结果
                           response.setContentType("application/json;charset=UTF-8");
                           response
                               .getWriter()
-                              .write("{\"code\":403,\"msg\":\"无操作权限\",\"data\":null}");
+                              .write(JSON.toJSONString(map));
                         }))
         // ========== 退出登录 ==========
         .logout(
@@ -66,11 +80,15 @@ public class SecurityConfig {
                     .logoutUrl("/user/logout") // 退出登录接口
                     .logoutSuccessHandler(
                         (request, response, authentication) -> {
+                          Map<String, Object> map = new HashMap<>();
+                          map.put("code", 200);
+                          map.put("msg", "退出登录成功");
+                          map.put("data", null);
                           // 退出成功返回JSON
                           response.setContentType("application/json;charset=UTF-8");
                           response
                               .getWriter()
-                              .write("{\"code\":200,\"msg\":\"退出登录成功\",\"data\":null}");
+                              .write(JSON.toJSONString(map));
                         }));
     return httpSecurity.build();
   }

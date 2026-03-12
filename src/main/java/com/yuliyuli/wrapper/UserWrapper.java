@@ -29,7 +29,7 @@ public class UserWrapper {
    * @return LambdaQueryWrapper<User> 查询条件
    */
   public LambdaQueryWrapper<User> buildUserByAccount(String account) {
-    return new LambdaQueryWrapper<User>().eq(User::getAccount, account).last("LIMIT 1");
+    return new LambdaQueryWrapper<User>().eq(User::getPhone, account).last("LIMIT 1");
   }
 
   /**

@@ -4,6 +4,7 @@ import com.rabbitmq.client.Channel;
 import com.yuliyuli.config.RabbitMqConfig;
 import com.yuliyuli.exception.GlobalExceptionHandler;
 import jakarta.annotation.Resource;
+
 import java.util.Map;
 import lombok.extern.slf4j.Slf4j;
 import org.redisson.api.RedissonClient;
@@ -15,76 +16,72 @@ import org.springframework.stereotype.Component;
 @Slf4j
 public class VideoPlayConsumer {
 
+  private final int MAX_RETRY_COUNT = 3;
+  private final String RETRY_HEADER = "play-retry-count";
+  private final String DELAY_KEY = "video:play:delay";
+  private final int DELAY_TIME = 1000 * 5; // 5秒
+
   @Resource private RedissonClient redissonClient;
 
   @RabbitListener(queues = RabbitMqConfig.PLAY_QUEUE_NAME)
-  public void videoPlay(String videoUrl, Channel channel, Message mqMessage) {
+  public void videoPlay(String videoUrl, Channel channel, Message mqMessage) throws Exception {
 
     Long deliveryTag = mqMessage.getMessageProperties().getDeliveryTag();
+    // 从消息头中获取重试次数,如果没有则默认0
+    Map<String, Object> headers = mqMessage.getMessageProperties().getHeaders();
+    Integer retryCount = (Integer) headers.getOrDefault(RETRY_HEADER, 0);
 
     if (videoUrl == null) {
       log.error("视频URL为空");
-      throw new GlobalExceptionHandler.BusinessException("视频URL为空");
+      channel.basicReject(deliveryTag, false);
+      return;
     }
 
-    final String DELAY_KEY = "video:play:delay";
-    final int DELAY_TIME = 1000 * 5; // 5秒
-
-    try {
-      redissonClient
-          .getScoredSortedSet(DELAY_KEY)
+    try{
+      redissonClient.getScoredSortedSet(DELAY_KEY)
           .add(System.currentTimeMillis() + DELAY_TIME, videoUrl);
       // 播放完成后，手动确认消息
-      basicAck(deliveryTag, channel);
+      channel.basicAck(deliveryTag, false);
+      log.info("视频播放成功,视频URL:{}", videoUrl);
     } catch (Exception e) {
-      log.error("视频播放锁获取失败", e);
-      throw new GlobalExceptionHandler.BusinessException("视频播放锁获取失败");
+      log.error("视频播放消费异常,重试次数:{}", retryCount, e);
+      handleRetry(deliveryTag, channel, retryCount, headers);
     }
   }
 
   @RabbitListener(queues = RabbitMqConfig.PLAY_DEAD_QUEUE_NAME)
   public void videoPlayDeadConsumer(String videoUrl, Channel channel, Message mqMessage) {
-
-    log.info("播放死信消费者,视频URL:{}", videoUrl);
+    log.info("播放视频死信消费者,视频URL:{}", videoUrl);
     Long diliverTag = mqMessage.getMessageProperties().getDeliveryTag();
-
-    Map<String, Object> headers = mqMessage.getMessageProperties().getHeaders();
-    Integer retryCount = (Integer) headers.getOrDefault("x-retry-count", 0);
-
     try {
-      log.error("播放死信队列消费者,视频URL:{}", videoUrl);
+      channel.basicAck(diliverTag, false);
     } catch (Exception e) {
+      log.error("死信队列播放视频失败,视频URL:{}", videoUrl, e);
+      throw new GlobalExceptionHandler.BusinessException("死信队列播放视频失败");
+    }
+  }
+
+   /**
+   * 处理重试
+   * @param deliveryTag 消息标签
+   * @param channel 通道
+   * @param retryCount 重试次数
+   * @param headers 消息头
+   */
+  private void handleRetry(Long deliveryTag, Channel channel, Integer retryCount, Map<String, Object> headers) {
+    if (retryCount < MAX_RETRY_COUNT) {
+      headers.put(RETRY_HEADER, retryCount + 1);
       try {
-        basicNack(diliverTag, channel, retryCount, headers);
-      } catch (Exception e2) {
-        log.error("确认播放失败", e2);
-        throw new GlobalExceptionHandler.BusinessException("确认播放失败");
-      }
-    }
-  }
-
-  public void basicAck(Long deliveryTag, Channel channel) {
-    try {
-      channel.basicAck(deliveryTag, false);
-    } catch (Exception e) {
-      log.error("ACK播放失败", e);
-      throw new GlobalExceptionHandler.BusinessException("ACK播放失败");
-    }
-  }
-
-  public void basicNack(
-      Long deliveryTag, Channel channel, int retryCount, Map<String, Object> headers) {
-    try {
-      if (retryCount < 3) {
-        headers.put("play-retry-count", retryCount + 1);
         channel.basicNack(deliveryTag, false, true);
+      } catch (Exception e) {
+        log.error("重试点赞消息失败,重试次数:{}", retryCount + 1, e);
       }
-      if (retryCount >= 3) {
-        channel.basicNack(deliveryTag, false, false);
+    } else {
+      try {
+        channel.basicReject(deliveryTag, false);
+      } catch (Exception e) {
+        log.error("点赞消息重试次数超过最大重试次数,已丢弃,重试次数:{}", retryCount, e);
       }
-    } catch (Exception e) {
-      log.error("NACK播放失败", e);
-      throw new GlobalExceptionHandler.BusinessException("NACK播放失败");
     }
   }
 }

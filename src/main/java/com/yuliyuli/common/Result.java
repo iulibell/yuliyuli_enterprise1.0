@@ -88,8 +88,8 @@ public class Result<T> {
    * @param <T> 数据类型
    * @return 统一返回结果
    */
-  public static <T> Result<T> unAuthorized() {
-    return new Result<>(401, "未登录或Token已过期", null);
+  public static <T> Result<T> unAuthorized(String msg) {
+    return new Result<>(401, msg, null);
   }
 
   /**
@@ -98,17 +98,18 @@ public class Result<T> {
    * @param <T> 数据类型
    * @return 统一返回结果
    */
-  public static <T> Result<T> forbidden() {
-    return new Result<>(403, "无操作权限", null);
+  public static <T> Result<T> forbidden(String msg) {
+    return new Result<>(403, msg, null);
   }
 
+  // ======================== 常用快捷失败方法（可选） ========================
   /**
    * 服务器内部错误返回（500状态码）
    *
    * @param <T> 数据类型
    * @return 统一返回结果
    */
-  public static <T> Result<T> serverError() {
-    return new Result<>(500, "服务器内部错误", null);
+  public static <T> Result<T> serverError(String msg) {
+    return new Result<>(500, msg, null);
   }
 }

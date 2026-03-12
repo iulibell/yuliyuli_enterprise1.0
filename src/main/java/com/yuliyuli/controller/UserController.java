@@ -7,13 +7,13 @@ import com.yuliyuli.entity.UserInfo;
 import com.yuliyuli.service.UserService;
 import com.yuliyuli.util.JwtUtil;
 import com.yuliyuli.vo.LoginVO;
-import com.yuliyuli.vo.UpdateUserInfoVO;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.annotation.Resource;
 import java.util.HashMap;
 import java.util.Map;
+
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -21,6 +21,10 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
+/**
+ * 用户控制器
+ * 提供用户登录、校验、注册等接口，校验已在业务层实现
+ */
 @RestController
 @RequestMapping("/api/user")
 @Tag(name = "用户模块")
@@ -42,19 +46,23 @@ public class UserController {
   public Result<Object> login(
       @Parameter(description = "登录参数（账号+密码）", required = true) @Validated @RequestBody
           User loginDto) {
-    log.info("【用户登录】账号：{}", loginDto.getAccount());
-    // 查询用户账号
-    LoginVO loginVO = userService.login(loginDto.getAccount(), loginDto.getPassword());
-    if (loginVO == null) {
-      return Result.fail("账号或密码错误!");
+    log.info("【用户登录】手机号：{}", loginDto.getPhone());
+    try {
+      LoginVO loginVO = userService.login(loginDto.getPhone(), loginDto.getPassword());
+      if (loginVO == null) {
+        log.info("【用户登录】账号或密码错误!");
+        return Result.fail("账号或密码错误!");
+      }
+      // 生成token
+      String token = jwtUtil.generateToken(loginVO.getUser().getUserId());
+      Map<String, Object> map = new HashMap<>();
+      map.put("token", token);
+      map.put("user", loginVO.getUser());
+      return Result.success(map);
+    } catch (Exception e) {
+      log.error("登录异常!", e);
+      return Result.fail("登录失败,请稍后重试");
     }
-
-    // 生成token
-    String token = jwtUtil.generateToken(loginVO.getUser().getUserId());
-    Map<String, Object> map = new HashMap<>();
-    map.put("token", token);
-    map.put("user", loginVO.getUser());
-    return Result.success(map);
   }
 
   /**
@@ -65,16 +73,22 @@ public class UserController {
    */
   @Operation(summary = "校验模块")
   @PostMapping("/getCode")
-  public Result<Object> check(
+  public Result<Object> getCode(
       @Parameter(description = "校验参数（手机号）", required = true) @Validated @RequestBody
-          ExistPhone existPhoneDto) {
-    log.info("【校验模块】手机号：{}", existPhoneDto.getPhone());
-    // 校验用户
-    String code = userService.getCode(existPhoneDto.getPhone());
-    if (code == null) {
-      return Result.fail("手机号不存在!");
+          ExistPhone existPhone) {
+    String phone = existPhone.getPhone();
+    log.info("手机号：{}", existPhone.getPhone());
+    try {
+      String message = userService.getCode(phone);
+      if (message == null) {
+        return Result.fail("验证码不能为空!");
+      }
+      log.info("验证码发送成功");
+      return Result.success(message);
+    } catch (Exception e) {
+      log.error("获取验证码异常!", e);
+      return Result.fail("获取验证码失败,请稍后重试");
     }
-    return Result.success(code);
   }
 
   /**
@@ -90,12 +104,16 @@ public class UserController {
       @Parameter(description = "注册参数（账号+验证码+密码）", required = true) @Validated @RequestBody
           User registerDto,
       @Parameter(description = "校验参数（验证码）", required = true) String code) {
-    // 注册用户
-    User user = userService.register(registerDto.getAccount(), code, registerDto.getPassword());
-    if (user == null) {
-      return Result.fail("验证码错误!");
+    try {
+      String message = userService.register(registerDto.getPhone(), code, registerDto.getPassword());
+      if (message == null) {
+        return Result.fail("验证码错误!");
+      }
+      return Result.success(message);
+    } catch (Exception e) {
+      log.error("【注册模块】注册异常!", e);
+      return Result.fail("注册失败,请稍后重试");
     }
-    return Result.success(user);
   }
 
   /**
@@ -110,12 +128,17 @@ public class UserController {
       @Parameter(description = "修改参数（性别+生日+签名）", required = true) @Validated @RequestBody
           UserInfo userInfoDto) {
     // 修改用户信息
-    UpdateUserInfoVO updateUserInfoVO =
+    try {
+      String message =
         userService.modifyInfo(
             userInfoDto.getGender(), userInfoDto.getBirthday(), userInfoDto.getSign());
-    if (updateUserInfoVO == null) {
-      return Result.fail("修改失败!");
+      if (message == null) {
+        return Result.fail("修改失败!");
+      }
+      return Result.success(message);
+    } catch (Exception e) {
+      log.error("【修改模块】修改异常!", e);
+      return Result.fail("修改失败,请稍后重试");
     }
-    return Result.success(updateUserInfoVO);
   }
 }
