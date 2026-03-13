@@ -13,6 +13,7 @@ import org.springframework.amqp.rabbit.annotation.RabbitListener;
 import org.springframework.stereotype.Component;
 
 import com.yuliyuli.config.RabbitMqConfig;
+import com.yuliyuli.exception.GlobalExceptionHandler;
 
 import jakarta.annotation.Resource;
 import lombok.extern.slf4j.Slf4j;
@@ -80,6 +81,13 @@ public class FollowConsumer {
     @RabbitListener(queues = RabbitMqConfig.FOLLOW_DEAD_QUEUE_NAME)
     public void followDeadConsumer(Map<String, Object> map, Channel channel, Message mqMessage){
         log.info("关注操作死信队列消费,userId:{}", map.get("fanUserId"));
+        Long deliveryTag = mqMessage.getMessageProperties().getDeliveryTag();
+        try{
+            channel.basicAck(deliveryTag, false);
+        }catch(Exception e){
+            log.error("关注死信队列消费异常", e);
+            throw new GlobalExceptionHandler.BusinessException("关注死信队列消费异常");
+        }
     }
 
   /**

@@ -12,6 +12,8 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestBody;
+
 
 /**
  * 信息返回控制器
@@ -55,5 +57,19 @@ public class InfoController {
       log.error("删除视频失败", e);
       return Result.fail("请重试删除该视频!");
     }
+  }
+
+  @PostMapping("/follow")
+  public Result<String> userfollow(@RequestBody Long followUserId, @RequestParam Long userId) {
+      try{
+        String result = infoService.userFollow(followUserId, userId);
+        if(result.equals("关注成功")) {
+          return Result.success("关注成功!");
+        }
+        return Result.fail(result);
+      } catch (Exception e) {
+        log.error("关注用户失败", e);
+        return Result.fail("请重试关注该用户!");
+      }
   }
 }
