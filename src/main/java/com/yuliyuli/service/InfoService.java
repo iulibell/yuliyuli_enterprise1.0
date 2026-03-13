@@ -19,5 +19,13 @@ public interface InfoService {
    * @param coverUrl 封面URL
    * @return 删除结果
    */
-  public void videoDelete(String videoIUrl, Long userId);
+  public String videoDelete(String videoIUrl, Long userId);
+
+  /**
+   * 用户关注
+   *
+   * @param followUserId 关注用户ID
+   * @param fanUserId 粉丝用户ID
+   */
+  public String userFollow(Long followUserId, Long fanUserId);
 }

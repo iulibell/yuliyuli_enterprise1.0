@@ -6,10 +6,16 @@ import org.springframework.context.annotation.Configuration;
 
 @Configuration
 public class RabbitMqConfig {
+  /** 关注配置（包含死信） */
+  public static final String FOLLOW_EXCHANGE_NAME = "follow_exchange_v2";
+  public static final String FOLLOW_QUEUE_NAME = "follow_queue_v2";
+  public static final String FOLLOW_ROUTING_KEY = "follow_routing_key_v2";
+  public static final String FOLLOW_DEAD_EXCHANGE_NAME = "follow_dead_exchange_v2";
+  public static final String FOLLOW_DEAD_QUEUE_NAME = "follow_dead_queue_v2";
+  public static final String FOLLOW_DEAD_ROUTING_KEY = "follow_dead_routing_key_v2";
 
   /** 视频删除配置（包含死信） */
   public static final String DELETE_EXCHANGE_NAME = "delete_exchange_v2";
-
   public static final String DELETE_QUEUE_NAME = "delete_queue_v2";
   public static final String DELETE_ROUTING_KEY = "delete_routing_key_v2";
   public static final String DELETE_DEAD_EXCHANGE_NAME = "delete_dead_exchange_v2";
@@ -18,7 +24,6 @@ public class RabbitMqConfig {
 
   /** 视频播放配置（包含死信） */
   public static final String PLAY_EXCHANGE_NAME = "play_exchange_v2";
-
   public static final String PLAY_QUEUE_NAME = "play_queue_v2";
   public static final String PLAY_ROUTING_KEY = "play_routing_key_v2";
   public static final String PLAY_DEAD_EXCHANGE_NAME = "play_dead_exchange_v2";
@@ -27,7 +32,6 @@ public class RabbitMqConfig {
 
   /** 热门视频播放配置（包含死信） */
   public static final String HOT_PLAY_EXCHANGE_NAME = "hot_play_exchange_v2";
-
   public static final String HOT_PLAY_QUEUE_NAME = "hot_play_queue_v2";
   public static final String HOT_PLAY_ROUTING_KEY = "hot_play_routing_key_v2";
   public static final String HOT_PLAY_DEAD_EXCHANGE_NAME = "hot_play_dead_exchange_v2";
@@ -36,7 +40,6 @@ public class RabbitMqConfig {
 
   /** 视频评论配置（包含死信） */
   public static final String COMMENT_EXCHANGE_NAME = "comment_exchange_v2";
-
   public static final String COMMENT_QUEUE_NAME = "comment_queue_v2";
   public static final String COMMENT_ROUTING_KEY = "comment_routing_key_v2";
   public static final String COMMENT_DEAD_EXCHANGE_NAME = "comment_dead_exchange_v2";
@@ -45,7 +48,6 @@ public class RabbitMqConfig {
 
   /** 视频收藏配置（包含死信） */
   public static final String COLLECT_EXCHANGE_NAME = "collect_exchange_v2";
-
   public static final String COLLECT_QUEUE_NAME = "collect_queue_v2";
   public static final String COLLECT_ROUTING_KEY = "collect_routing_key_v2";
   public static final String COLLECT_DEAD_EXCHANGE_NAME = "collect_dead_exchange_v2";
@@ -54,7 +56,6 @@ public class RabbitMqConfig {
 
   /** 视频点赞配置（包含死信） */
   public static final String LIKE_EXCHANGE_NAME = "like_exchange_v2";
-
   public static final String LIKE_QUEUE_NAME = "like_queue_v2";
   public static final String LIKE_ROUTING_KEY = "like_routing_key_v2";
   public static final String LIKE_DEAD_EXCHANGE_NAME = "like_dead_exchange_v2";
@@ -361,6 +362,49 @@ public class RabbitMqConfig {
     return BindingBuilder.bind(deleteDeadQueue())
         .to(deleteDeadExchange())
         .with(DELETE_DEAD_ROUTING_KEY)
+        .noargs();
+  }
+
+  @Bean
+  public Queue followQueue() {
+    return QueueBuilder.durable(FOLLOW_QUEUE_NAME)
+        .deadLetterExchange(FOLLOW_DEAD_EXCHANGE_NAME)
+        .deadLetterRoutingKey(FOLLOW_DEAD_ROUTING_KEY)
+        .ttl(10000)
+        .build();
+  }
+
+  @Bean
+  public Exchange followExchange() {
+    return ExchangeBuilder.topicExchange(FOLLOW_EXCHANGE_NAME).durable(true).build();
+  }
+
+  @Bean
+  public Binding followBinding() {
+    return BindingBuilder.bind(followQueue())
+        .to(followExchange())
+        .with(FOLLOW_ROUTING_KEY)
+        .noargs();
+  }
+
+  /** 关注配置（包含死信） */
+  @Bean
+  public Queue followDeadQueue() {
+    return QueueBuilder.durable(FOLLOW_DEAD_QUEUE_NAME)
+        .ttl(10000)
+        .build();
+  }
+
+  @Bean
+  public Exchange followDeadExchange() {
+    return ExchangeBuilder.directExchange(FOLLOW_DEAD_EXCHANGE_NAME).durable(true).build();
+  }
+
+  @Bean
+  public Binding followDeadBinding() {
+    return BindingBuilder.bind(followDeadQueue())
+        .to(followDeadExchange())
+        .with(FOLLOW_DEAD_ROUTING_KEY)
         .noargs();
   }
 }

@@ -16,6 +16,7 @@ import com.yuliyuli.init.VideoInfoInit;
 import com.yuliyuli.mapper.VideoMapper;
 import com.yuliyuli.service.SearchService;
 import com.yuliyuli.service.VideoService;
+import com.yuliyuli.util.BloomFilterUtil;
 import com.yuliyuli.util.VideoConvertUtil;
 import com.yuliyuli.vo.HotRecommendVideoVO;
 import com.yuliyuli.vo.SearchVideoVO;
@@ -56,6 +57,8 @@ public class VideoServiceImpl implements VideoService {
   @Resource private VideoConvertUtil videoConvertUtil;
 
   @Resource private RedisTemplate<String, Object> redisTemplate;
+
+  @Resource private BloomFilterUtil bloomFilterUtil;
 
   /*=======================================================👇消息发布者============================================================= */
 
@@ -165,6 +168,10 @@ public class VideoServiceImpl implements VideoService {
     threadPoolExecutor.submit(
         () -> {
           try {
+            // 检查视频是否存在
+            if (bloomFilterUtil.checkVideoExists(videoUrl)) {
+              return "视频不存在";
+            }
             rabbitTemplate.convertAndSend(RabbitMqConfig.HOT_PLAY_QUEUE_NAME, videoUrl);
           } catch (Exception e) {
             log.error("视频播放失败", e);
@@ -185,6 +192,10 @@ public class VideoServiceImpl implements VideoService {
     threadPoolExecutor.submit(
         () -> {
           try {
+            // 检查视频是否存在
+            if (bloomFilterUtil.checkVideoExists(videoUrl)) {
+              return "视频不存在";
+            }
             rabbitTemplate.convertAndSend(RabbitMqConfig.PLAY_QUEUE_NAME, videoUrl);
           } catch (Exception e) {
             log.error("视频播放失败", e);

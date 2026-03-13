@@ -54,7 +54,7 @@ public class VideoLikeConsumer {
       boolean isLocked = lock.tryLock(LOCK_WAIT, LOCK_RELEASE, TimeUnit.SECONDS);
       if (!isLocked) {
         log.info("用户{}点赞视频{}失败，获取分布式锁失败,已重新放入队列", userId, videoId);
-        handleRetry(DELAY_TIME, channel, retryCount, headers);
+        handleRetry(deliveryTag, channel, retryCount, headers);
         return;
       }
       String userKey = USER_KEY_PREFIX + videoLike.getUserId();

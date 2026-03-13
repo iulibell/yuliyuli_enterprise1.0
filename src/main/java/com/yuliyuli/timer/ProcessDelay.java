@@ -2,6 +2,7 @@ package com.yuliyuli.timer;
 
 import com.yuliyuli.entity.VideoLike;
 import com.yuliyuli.mapper.CommentMapper;
+import com.yuliyuli.mapper.FollowMapper;
 import com.yuliyuli.mapper.VideoMapper;
 import jakarta.annotation.Resource;
 import java.util.Collection;
@@ -33,6 +34,8 @@ public class ProcessDelay {
   @Resource private VideoMapper videoMapper;
 
   @Resource private CommentMapper commentMapper;
+
+  @Resource private FollowMapper followMapper;
 
   @Resource private ElasticsearchOperations elasticsearchOperations;
 
@@ -78,12 +81,12 @@ public class ProcessDelay {
         userSet.remove(videoLike.getUserId());
         finallyCount = counter.decrementAndGet();
         videoMapper.deleteVideoLike(videoLike.getVideoId(), videoLike.getUserId());
+        return;
       } else {
         // 点赞
         userSet.add(videoLike.getUserId());
         finallyCount = counter.incrementAndGet();
       }
-
       // 更新数据库
       videoMapper.updateVideoLikeCount(finallyCount.intValue(), videoLike.getVideoId().toString());
       videoMapper.insertVideoLike(videoLike);
@@ -259,6 +262,39 @@ public class ProcessDelay {
       elasticsearchOperations.update(updateQuery, IndexCoordinates.of("video"));
     } catch (Exception e) {
       log.error("处理延时视频删除同步到ES失败: {}", videoUrl, e);
+    }
+  }
+
+  @Scheduled(fixedRate = 5000) // 每5秒检查一次
+  @Async
+  private void processFollow(){
+    try {
+    String delayKey = "follow:delay";
+    long currentTime = System.currentTimeMillis();
+    RScoredSortedSet<Map<String, Object>> sortedSet = redissonClient.getScoredSortedSet(delayKey);
+    Collection<Map<String, Object>> expiredVideoUrls =
+        sortedSet.entryRange(0, true, currentTime, true).stream()
+            .map(entry -> entry.getValue())
+            .collect(Collectors.toList());
+    // 遍历处理每个到期的 videoUrl
+    for (Map<String, Object> map : expiredVideoUrls) {
+        processFollow(map);
+        sortedSet.remove(map);
+      }
+    } catch (Exception e) {
+      log.error("处理延时关注失败: {}", e);
+    }
+  }
+
+  private void processFollow(Map<String, Object> map) {
+    // 从map中获取userId和followUserId
+    String fanUserId = map.get("fanUserId").toString();
+    String followUserId = map.get("followUserId").toString();
+    try {
+      // 执行关注操作
+      followMapper.followUser(Long.parseLong(followUserId), Long.parseLong(fanUserId));
+    } catch (Exception e) {
+      log.error("处理延时关注失败: {}", map, e);
     }
   }
 }

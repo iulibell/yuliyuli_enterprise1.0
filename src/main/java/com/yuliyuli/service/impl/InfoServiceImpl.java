@@ -33,10 +33,10 @@ public class InfoServiceImpl implements InfoService {
    * @return 删除结果
    */
   @Override
-  public void videoDelete(String videoIUrl, Long userId) {
+  public String videoDelete(String videoIUrl, Long userId) {
     if (!checkIsLogin()) {
       log.error("用户未登录，无法删除视频");
-      throw new IllegalArgumentException("用户未登录,无法删除视频");
+      return "请完成登录";
     }
     try {
       Map<String, Object> map = new HashMap<>();
@@ -45,9 +45,10 @@ public class InfoServiceImpl implements InfoService {
       rabbitTemplate.convertAndSend(
           RabbitMqConfig.DELETE_EXCHANGE_NAME, RabbitMqConfig.DELETE_ROUTING_KEY, map);
       log.info("删除视频传至mq成功,视频ID:{}", videoIUrl);
+      return "删除视频成功";
     } catch (Exception e) {
       log.error("删除视频传至mq失败,视频ID:{}", videoIUrl, e);
-      throw new IllegalArgumentException("删除视频传至mq失败,视频ID:" + videoIUrl);
+      return "删除视频失败,请稍后重试";
     }
   }
 
@@ -65,6 +66,25 @@ public class InfoServiceImpl implements InfoService {
     } catch (Exception e) {
       log.error("获取作者页面视频失败,作者ID:{}", userId, e);
       throw new IllegalArgumentException("获取作者页面视频失败,作者ID:" + userId);
+    }
+  }
+
+  public String userFollow(Long followUserId, Long fanUserId){
+    if (!checkIsLogin()) {
+      log.error("用户未登录，无法关注用户");
+      return "请完成登录";
+    }
+    try{
+      Map<String, Object> map = new HashMap<>();
+      map.put("followUserId", followUserId);
+      map.put("fanUserId", fanUserId);
+      rabbitTemplate.convertAndSend(
+          RabbitMqConfig.FOLLOW_EXCHANGE_NAME, RabbitMqConfig.FOLLOW_ROUTING_KEY, map);
+      log.info("关注用户传至mq成功,关注用户ID:{}", followUserId);
+      return "关注成功"; 
+    } catch (Exception e) {
+      log.error("关注用户传至mq失败,关注用户ID:{}", followUserId, e);
+      return "关注失败,请稍后重试";
     }
   }
 

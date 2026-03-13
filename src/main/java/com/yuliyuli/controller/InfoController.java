@@ -11,6 +11,7 @@ import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.PostMapping;
 
 /**
  * 信息返回控制器
@@ -38,7 +39,21 @@ public class InfoController {
       return Result.success(infoService.getAuthorPageVideo(userId));
     } catch (Exception e) {
       log.error("获取作者页面视频失败", e);
-      return Result.fail("获取作者页面视频失败,请稍后重试!");
+      return Result.fail("请重试打开该页面!");
+    }
+  }
+
+  @PostMapping("/videoDelete")
+  public Result<Object> videoDelete(@RequestParam String videoIUrl, @RequestParam Long userId) {
+    try{
+      String result = infoService.videoDelete(videoIUrl, userId);
+      if(result.equals("删除成功")){
+        return Result.success("删除成功");
+      }
+      return Result.fail(result);
+    } catch (Exception e) {
+      log.error("删除视频失败", e);
+      return Result.fail("请重试删除该视频!");
     }
   }
 }

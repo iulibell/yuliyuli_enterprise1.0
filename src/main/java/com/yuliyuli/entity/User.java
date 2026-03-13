@@ -45,4 +45,10 @@ public class User {
 
   @Parameter(name = "更新时间")
   private Date updateTime;
+
+  @Parameter(name = "关注数量")
+  private Long followCount;
+
+  @Parameter(name = "粉丝数量")
+  private Long fansCount;
 }

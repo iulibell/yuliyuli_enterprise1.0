@@ -58,7 +58,6 @@ public class HotVideoPlayConsumer {
         // 播放完成后，手动确认消息
         channel.basicAck(deliveryTag, false);
         log.info("热门视频播放成功,视频URL:{}", videoUrl);
-         
     }catch (Exception e){
       log.error("热门视频播放消费异常,retry={}", retryCount, e);
       handleRetry(deliveryTag, channel, retryCount, headers);
