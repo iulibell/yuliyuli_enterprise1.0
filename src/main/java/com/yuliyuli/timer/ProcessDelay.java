@@ -78,6 +78,7 @@ public class ProcessDelay {
         userSet.remove(videoLike.getUserId());
         finallyCount = counter.decrementAndGet();
         videoMapper.deleteVideoLike(videoLike.getVideoId(), videoLike.getUserId());
+        return;
       } else {
         // 点赞
         userSet.add(videoLike.getUserId());
