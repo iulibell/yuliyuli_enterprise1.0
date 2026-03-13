@@ -57,6 +57,8 @@ public class VideoServiceImpl implements VideoService {
 
   @Resource private RedisTemplate<String, Object> redisTemplate;
 
+  @Resource private BloomFilterUtil bloomFilterUtil;
+
   /*=======================================================👇消息发布者============================================================= */
 
   /**
@@ -139,6 +141,9 @@ public class VideoServiceImpl implements VideoService {
             throw new GlobalExceptionHandler.BusinessException("请完成登录");
           }
           try {
+            if(!bloomFilterUtil.mightContain(comment.getVideoId)){
+              return Optional.emptyList();
+            }
             rabbitTemplate.convertAndSend(RabbitMqConfig.COMMENT_QUEUE_NAME, comment);
           } catch (Exception e) {
             log.error("视频评论失败", e);
@@ -157,6 +162,9 @@ public class VideoServiceImpl implements VideoService {
     threadPoolExecutor.submit(
         () -> {
           try {
+            if(!bloomFilterUtil.mightContain(videoUrl)){
+              return Optional.emptyList();
+            }
             rabbitTemplate.convertAndSend(RabbitMqConfig.HOT_PLAY_QUEUE_NAME, videoUrl);
           } catch (Exception e) {
             log.error("视频播放失败", e);
@@ -175,6 +183,9 @@ public class VideoServiceImpl implements VideoService {
     threadPoolExecutor.submit(
         () -> {
           try {
+            if(!bloomFilterUtil.mightContain(videoUrl)){
+              return Optional.emptyList();
+            }
             rabbitTemplate.convertAndSend(RabbitMqConfig.PLAY_QUEUE_NAME, videoUrl);
           } catch (Exception e) {
             log.error("视频播放失败", e);
