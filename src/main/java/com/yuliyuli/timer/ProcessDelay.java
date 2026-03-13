@@ -123,12 +123,7 @@ public class ProcessDelay {
 
     String counterKey = COUNTER_KEY_PREFIX + videoUrl;
     try {
-      // 计数器，记录热门视频播放次数
-      RAtomicLong counter = redissonClient.getAtomicLong(counterKey);
-      Long finallyCount = counter.incrementAndGet();
-      processPlayCountToES(videoUrl);
-      videoMapper.updateVideoPlayCount(finallyCount.intValue(), videoUrl);
-      log.info("延时处理热门视频播放：视频{}，播放数{}", videoUrl, finallyCount);
+      playCommonProcess();
     } catch (Exception e) {
       log.error("处理延时热门视频播放失败: {}", videoUrl, e);
     }
@@ -162,12 +157,7 @@ public class ProcessDelay {
 
     String counterKey = COUNTER_KEY_PREFIX + videoUrl;
     try {
-      // 计数器，记录播放次数
-      RAtomicLong counter = redissonClient.getAtomicLong(counterKey);
-      Long finallyCount = counter.incrementAndGet();
-      processPlayCountToES(videoUrl);
-      videoMapper.updateVideoPlayCount(finallyCount.intValue(), videoUrl);
-      log.info("延时处理视频播放：视频{}，播放数{}", videoUrl, finallyCount);
+      playCommonProcess();
     } catch (Exception e) {
       log.error("处理延时视频播放失败: {}", videoUrl, e);
     }
@@ -260,5 +250,14 @@ public class ProcessDelay {
     } catch (Exception e) {
       log.error("处理延时视频删除同步到ES失败: {}", videoUrl, e);
     }
+  }
+
+  private void playCommonProcess(){
+      // 计数器，记录播放次数
+      RAtomicLong counter = redissonClient.getAtomicLong(counterKey);
+      Long finallyCount = counter.incrementAndGet();
+      processPlayCountToES(videoUrl);
+      videoMapper.updateVideoPlayCount(finallyCount.intValue(), videoUrl);
+      log.info("延时处理视频播放：视频{}，播放数{}", videoUrl, finallyCount);
   }
 }
