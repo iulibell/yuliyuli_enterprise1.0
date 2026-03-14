@@ -4,6 +4,7 @@ import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.yuliyuli.config.RabbitMqConfig;
 import com.yuliyuli.document.VideoDocument;
 import com.yuliyuli.entity.Comment;
+import com.yuliyuli.entity.User;
 import com.yuliyuli.entity.UserHolder;
 import com.yuliyuli.entity.Video;
 import com.yuliyuli.entity.VideoCollection;
@@ -16,14 +17,11 @@ import com.yuliyuli.mapper.VideoMapper;
 import com.yuliyuli.service.SearchService;
 import com.yuliyuli.service.VideoService;
 import com.yuliyuli.util.BloomFilterUtil;
-import com.yuliyuli.util.TransferUtil;
 import com.yuliyuli.util.VideoConvertUtil;
 import com.yuliyuli.vo.HotRecommendVideoVO;
 import com.yuliyuli.vo.SearchVideoVO;
 import com.yuliyuli.vo.VideoVO;
 import com.yuliyuli.wrapper.VideoWrapper;
-
-import cn.ipokerface.snowflake.SnowflakeIdGenerator;
 import jakarta.annotation.Resource;
 import java.time.Duration;
 import java.util.ArrayList;
@@ -31,6 +29,7 @@ import java.util.List;
 import java.util.Set;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.TimeUnit;
+
 import lombok.extern.slf4j.Slf4j;
 import org.redisson.api.RBucket;
 import org.redisson.api.RLock;
@@ -62,10 +61,6 @@ public class VideoServiceImpl implements VideoService {
 
   @Resource private BloomFilterUtil bloomFilterUtil;
 
-  @Resource private TransferUtil transferUtil;
-
-  @Resource private SnowflakeIdGenerator snowflakeIdGenerator;
-
   /*=======================================================👇消息发布者============================================================= */
 
   /**
@@ -75,47 +70,21 @@ public class VideoServiceImpl implements VideoService {
    */
   @Override
   public String videoDeliver(VideoDelivery videoDelivery) {
-    // 检查用户是否登录
-    if (!checkIsLogin()) {
-      return "请完成登录";
-    }
-    // 设置视频的用户ID
-    videoDelivery.getVideo().setUserId(UserHolder.getUser().getUserId());
-    
-    // 生成videoId和coverId（在发送消息前生成，确保重试时ID不变）
-    Long videoId = snowflakeIdGenerator.nextId();
-    Long coverId = snowflakeIdGenerator.nextId();
-    videoDelivery.getVideo().setUrl(videoId.toString());
-    videoDelivery.getVideo().setCover(coverId.toString());
-    
-    if (videoDelivery.getVideoFile() != null) {
-    // 保存视频文件到磁盘
-    String videoFilePath = transferUtil.saveMultipartFile(videoDelivery.getVideoFile(),
-     "C:\\Users\\Administrator\\Desktop\\yuliyuli_enterprise\\static\\videoUrl");
-    videoDelivery.setVideoPath(videoFilePath);      
-    }
-    // 保存封面文件到磁盘（如果有）
-    if (videoDelivery.getCoverFile() != null) {
-      String coverFilePath = transferUtil.saveMultipartFile(videoDelivery.getCoverFile(),
-       "C:\\Users\\Administrator\\Desktop\\yuliyuli_enterprise\\static\\coverUrl");
-      videoDelivery.setCoverPath(coverFilePath);
-    }
-    
-    // 清除MultipartFile，避免序列化问题
-    videoDelivery.setVideoFile(null);
-    videoDelivery.setCoverFile(null);
-
     threadPoolExecutor.submit(
         () -> {
+          User user = UserHolder.getUser();
+          if (user == null) {
+            return "请完成登录";
+          }
           try {
             rabbitTemplate.convertAndSend(RabbitMqConfig.VIDEO_QUEUE_NAME, videoDelivery);
+            return "视频分发成功";
           } catch (Exception e) {
             log.error("视频分发失败", e);
-            return "视频上传失败";
+            return "视频分发失败";
           }
-          return "视频上传成功";
         });
-      return "视频上传成功";
+        return "视频分发成功";
   }
 
   /**
@@ -125,21 +94,24 @@ public class VideoServiceImpl implements VideoService {
    */
   @Override
   public String videoLike(VideoLike videoLike) {
-    // 检查用户是否登录
-    if (!checkIsLogin()) {
-      return "请完成登录";
-    }
     threadPoolExecutor.submit(
         () -> {
+          User user = UserHolder.getUser();
+          if (user == null) {
+            return "请完成登录";
+          }
           try {
+            if(!bloomFilterUtil.checkVideoExists(videoLike.getVideoId())){
+              return "视频不存在";
+            }
             rabbitTemplate.convertAndSend(RabbitMqConfig.LIKE_QUEUE_NAME, videoLike);
+            return "点赞成功";
           } catch (Exception e) {
             log.error("视频点赞失败", e);
             return "视频点赞失败";
           }
-          return "点赞成功";
         });
-    return "点赞成功";
+        return "点赞成功";
   }
 
   /**
@@ -149,21 +121,24 @@ public class VideoServiceImpl implements VideoService {
    */
   @Override
   public String videoCollect(VideoCollection videoCollection) {
-    // 检查用户是否登录
-    if (!checkIsLogin()) {
-      return "请完成登录";
-    }
     threadPoolExecutor.submit(
         () -> {
+          User user = UserHolder.getUser();
+          if (user == null) {
+            return "请完成登录";
+          }
           try {
+            if(!bloomFilterUtil.checkVideoExists(videoCollection.getVideoId())){
+              return "视频不存在";
+            }
             rabbitTemplate.convertAndSend(RabbitMqConfig.COLLECT_QUEUE_NAME, videoCollection);
+            return "收藏成功";
           } catch (Exception e) {
             log.error("视频收藏失败", e);
             return "视频收藏失败";
           }
-          return "收藏成功";
         });
-    return "收藏成功";
+        return "";
   }
 
   /**
@@ -173,21 +148,24 @@ public class VideoServiceImpl implements VideoService {
    */
   @Override
   public String videoComment(Comment comment) {
-    // 检查用户是否登录
-    if (!checkIsLogin()) {
-      return "请完成登录";
-    }
     threadPoolExecutor.submit(
         () -> {
+          User user = UserHolder.getUser();
+          if (user == null) {
+            return "请完成登录";
+          }
           try {
+            if(!bloomFilterUtil.checkVideoExists(comment.getVideoId())){
+              return "视频不存在";
+            }
             rabbitTemplate.convertAndSend(RabbitMqConfig.COMMENT_QUEUE_NAME, comment);
+            return "评论成功";
           } catch (Exception e) {
             log.error("视频评论失败", e);
             return "视频评论失败";
           }
-          return "评论成功";
         });
-    return "评论成功";
+        return "";
   }
 
   /**
@@ -200,18 +178,17 @@ public class VideoServiceImpl implements VideoService {
     threadPoolExecutor.submit(
         () -> {
           try {
-            // 检查视频是否存在
-            if (bloomFilterUtil.checkVideoExists(videoUrl)) {
+            if(!bloomFilterUtil.checkVideoExists(videoUrl)){
               return "视频不存在";
             }
             rabbitTemplate.convertAndSend(RabbitMqConfig.HOT_PLAY_QUEUE_NAME, videoUrl);
+            return "";
           } catch (Exception e) {
             log.error("视频播放失败", e);
             return "视频播放失败";
           }
-          return "";
         });
-    return "";
+        return "";
   }
 
   /**
@@ -224,18 +201,17 @@ public class VideoServiceImpl implements VideoService {
     threadPoolExecutor.submit(
         () -> {
           try {
-            // 检查视频是否存在
-            if (bloomFilterUtil.checkVideoExists(videoUrl)) {
+            if(!bloomFilterUtil.checkVideoExists(videoUrl)){
               return "视频不存在";
             }
             rabbitTemplate.convertAndSend(RabbitMqConfig.PLAY_QUEUE_NAME, videoUrl);
+            return "";
           } catch (Exception e) {
             log.error("视频播放失败", e);
             return "视频播放失败";
           }
-          return "";
         });
-    return "";
+        return "";
   }
 
   /*=======================================================👇get方法============================================================= */
@@ -257,7 +233,7 @@ public class VideoServiceImpl implements VideoService {
       if (listBucket.isExists()) {
         List<Video> videoList = listBucket.get();
         log.info("从缓存中获取视频列表成功,视频数量:{}", videoList.size());
-        return VideoConvertUtil.convertToVOPage(videoList, pageNum, pageSize);
+        return convertToVOPage(videoList, pageNum, pageSize);
       }
 
       // 2. 获取分布式锁
@@ -269,7 +245,7 @@ public class VideoServiceImpl implements VideoService {
         try {
           // 3. 双重检查（防止等待锁期间其他线程已加载缓存）
           if (listBucket.isExists()) {
-            return VideoConvertUtil.convertToVOPage(listBucket.get(), pageNum, pageSize);
+            return convertToVOPage(listBucket.get(), pageNum, pageSize);
           }
 
           // 4. 从数据库查询
@@ -306,6 +282,13 @@ public class VideoServiceImpl implements VideoService {
       log.error("从数据库中获取视频列表失败", e);
       throw new GlobalExceptionHandler.BusinessException("从数据库中获取视频列表失败");
     }
+  }
+
+  /** 辅助方法：转换为视频VO分页对象 */
+  private Page<VideoVO> convertToVOPage(List<Video> videoList, int pageNum, int pageSize) {
+    Page<Video> page = new Page<>(pageNum, pageSize);
+    page.setRecords(videoList);
+    return VideoConvertUtil.converPageToVideoVOList(page);
   }
 
   /**
@@ -351,12 +334,5 @@ public class VideoServiceImpl implements VideoService {
     }
     log.info("获取推荐热门视频成功，数量: {}", hotVideoList.size());
     return VideoConvertUtil.convertVideoDocumentToHotRecommendVideoVO(hotVideoList);
-  }
-
-  public boolean checkIsLogin() {
-  if (UserHolder.getUser() == null) {
-      return false;
-    }
-    return true;
   }
 }

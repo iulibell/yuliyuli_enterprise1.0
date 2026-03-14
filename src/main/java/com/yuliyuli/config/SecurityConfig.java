@@ -45,9 +45,9 @@ public class SecurityConfig {
                 authorize
                     .requestMatchers(CorsUtils::isPreFlightRequest)
                     .permitAll()
-                    .requestMatchers("/user/login", "/user/register", "/user/logout")
+                    .requestMatchers("/api/user/login", "/api/user/register", "/api/user/logout", "/api/user/getCode")
                     .permitAll()
-                    .requestMatchers("/video/list", "/video/detail")
+                    .requestMatchers("/api/video/list", "/api/video/detail", "/api/video/delivery")
                     .permitAll()
                     .anyRequest()
                     .authenticated())
@@ -77,7 +77,7 @@ public class SecurityConfig {
         .logout(
             logout ->
                 logout
-                    .logoutUrl("/user/logout") // 退出登录接口
+                    .logoutUrl("/api/user/logout") // 退出登录接口
                     .logoutSuccessHandler(
                         (request, response, authentication) -> {
                           Map<String, Object> map = new HashMap<>();
