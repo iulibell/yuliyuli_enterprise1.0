@@ -102,6 +102,7 @@ public class UserServiceImpl implements UserService {
       String redisKey = SMS_CODE_PREFIX + phone;
     // 4. 保存验证码到Redis（替换内存存储，解决多线程问题）
     redisTemplate.opsForValue().set(redisKey, code, SMS_CODE_EXPIRE, TimeUnit.MINUTES);
+    System.out.println("验证码：" + code);
     log.info("手机号{}生成验证码：{}，有效期{}分钟", phone, code, SMS_CODE_EXPIRE);
     return "验证码发送成功!";
     } catch (Exception e) {
@@ -116,23 +117,23 @@ public class UserServiceImpl implements UserService {
     if (!StringUtils.hasText(phone)
         || !StringUtils.hasText(code)
         || !StringUtils.hasText(password)) {
-      throw new GlobalExceptionHandler.BusinessException("手机号、验证码、密码不能为空");
+      return "手机号、验证码、密码不能为空";
     }
     if (password.length() < 6 || password.length() > 12) {
-      throw new GlobalExceptionHandler.BusinessException("密码长度必须大于等于6位且小于等于12位");
+      return "密码长度必须大于等于6位且小于等于12位";
     }
     if (!phone.matches("^1[3-9]\\d{9}$")) {
-      throw new GlobalExceptionHandler.BusinessException("请输入有效的11位手机号");
+      return "请输入有效的11位手机号";
     }
 
     // 2. 从Redis获取验证码并校验
     String redisKey = SMS_CODE_PREFIX + phone;
     String cacheCode = (String) redisTemplate.opsForValue().get(redisKey);
     if (cacheCode == null) {
-      throw new GlobalExceptionHandler.BusinessException("验证码已过期，请重新获取");
+      return "验证码已过期，请重新获取";
     }
     if (!code.equals(cacheCode)) {
-      return null;
+      return "验证码错误!";
     }
 
     try {

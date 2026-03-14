@@ -23,14 +23,20 @@ spring:
     password: guest
     listener:
       simple:
+        acknowledge-mode: manual
         retry:
-          enabled: true
+          enabled: false
           max-retries: 3
           initial-interval: 1000
           multiplier: 2.0
 video:
   upload:
-    path: ./static/videoUrl
+    videopath: C:\Users\Administrator\Desktop\yuliyuli_enterprise\static\videoUrl
+    coverPath: C:\Users\Administrator\Desktop\yuliyuli_enterprise\static\coverUrl
 snowflake:
   worker-id: 1
   datacenter-id: 1
+logging:
+  charset:
+    console: UTF-8     
+    file: UTF-8          

@@ -41,7 +41,7 @@ public class UserWrapper {
   public LambdaQueryWrapper<ExistPhone> buildUserByPhone(String phone) {
     return new LambdaQueryWrapper<ExistPhone>()
         .eq(ExistPhone::getPhone, phone)
-        .select(ExistPhone::getId)
+        .select(ExistPhone::getUsername)
         .last("LIMIT 1");
   }
 

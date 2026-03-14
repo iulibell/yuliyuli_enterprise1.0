@@ -407,4 +407,10 @@ public class RabbitMqConfig {
         .with(FOLLOW_DEAD_ROUTING_KEY)
         .noargs();
   }
+
+  /** 配置消息转换器为 JSON */
+  @Bean
+  public org.springframework.amqp.support.converter.MessageConverter messageConverter() {
+    return new org.springframework.amqp.support.converter.Jackson2JsonMessageConverter();
+  }
 }

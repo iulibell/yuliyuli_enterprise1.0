@@ -1,6 +1,5 @@
 package com.yuliyuli.consumer;
 
-import cn.ipokerface.snowflake.SnowflakeIdGenerator;
 import com.rabbitmq.client.Channel;
 import com.yuliyuli.config.RabbitMqConfig;
 import com.yuliyuli.document.VideoDocument;
@@ -25,7 +24,7 @@ import org.springframework.stereotype.Component;
 public class VideoDeliverConsumer {
 
   private static final String RETRY_HEADER = "video-delivery-retry-count";
-  private static final int MAX_RETRY_COUNT = 3;
+  private static final int MAX_RETRY_COUNT = 1;
   private static final String LOCK_KEY_PREFIX = "delivery:video:lock:";
   private static final int LOCK_WAIT = 3; // 3秒
   private static final int LOCK_RELEASE = 10; // 10秒
@@ -36,8 +35,6 @@ public class VideoDeliverConsumer {
 
   @Resource private RedissonClient redissonClient;
 
-  @Resource private SnowflakeIdGenerator snowflakeIdGenerator;
-
   @Resource private VideoRepository videoRepository;
 
   /**
@@ -46,10 +43,10 @@ public class VideoDeliverConsumer {
    * @param videoDelivery 视频消息
    */
   @RabbitListener(queues = RabbitMqConfig.VIDEO_QUEUE_NAME)
-  public void videoConsumer(VideoDelivery videoDelivery, Channel channel, Message mqMessage)
+  public void videoDeliveryConsumer(VideoDelivery videoDelivery, Channel channel, Message mqMessage)
       throws Exception {
     Long deliveryTag = mqMessage.getMessageProperties().getDeliveryTag();
-
+    // 从消息头中获取重试次数,如果没有则默认0
     Map<String, Object> headers = mqMessage.getMessageProperties().getHeaders();
     Integer retryCount = (Integer) headers.getOrDefault(RETRY_HEADER, 0);
 
@@ -60,7 +57,7 @@ public class VideoDeliverConsumer {
     }
 
     String userId = videoDelivery.getVideo().getUserId().toString();
-    Long videoId = snowflakeIdGenerator.nextId();
+    Long videoId = Long.parseLong(videoDelivery.getVideo().getUrl());
 
     // 视频锁，确保每个用户每个视频只插入一次
     String lockKey = LOCK_KEY_PREFIX + videoId + ":" + userId;
@@ -73,25 +70,22 @@ public class VideoDeliverConsumer {
         handleRetry(deliveryTag, channel, retryCount, headers);
         return;
       }
-        videoDelivery.getVideo().setUrl(videoId.toString());
-        if (videoMapper.insert(videoDelivery.getVideo()) != 1) {
-          channel.basicNack(deliveryTag, false, false);
-          log.error("用户{}视频{}插入失败", userId, videoId);
-          throw new GlobalExceptionHandler.BusinessException("视频插入失败");
-        }
-        saveVideoToSearchIndex(videoDelivery, videoId);
-        // 视频文件存储路径
-        String videoPath = transferUtil.saveVideoToDirectory(videoDelivery);
-        if (videoPath == null) {
-          channel.basicAck(deliveryTag, false);
-          log.error("用户{}视频{}文件路径为空", userId, videoId);
-          throw new GlobalExceptionHandler.BusinessException("视频文件存储失败");
-        }
-        // 视频分发成功后,手动确认消息
-        channel.basicAck(deliveryTag, false);
-        log.info("用户{}视频{}分发成功,视频路径:{}", userId, videoId, videoPath);
+      log.info("开始保存到ES索引");
+      saveVideoToSearchIndex(videoDelivery, videoId);
+      log.info("ES索引保存成功");
+      log.info("开始插入数据库, videoId={}, userId={}", videoId, userId);
+      int insertResult = videoMapper.insert(videoDelivery.getVideo());   
+      if (insertResult != 1) {
+        channel.basicNack(deliveryTag, false, false);
+        log.error("用户{}视频{}插入失败", userId, videoId);
+        throw new GlobalExceptionHandler.BusinessException("视频插入失败");
+      }         
+      log.info("数据库插入结果:{}", insertResult);
+      // 视频分发成功后,手动确认消息
+      channel.basicAck(deliveryTag, false);
+      log.info("用户{}视频{}分发成功", userId, videoId);
     } catch (Exception e) {
-      log.error("用户{}视频{}分发失败", userId, videoId);
+      log.error("用户{}视频{}分发失败,异常:{}", userId, videoId, e.getMessage(), e);
       handleRetry(deliveryTag, channel, retryCount, headers);
     } finally {
       if (lock.isHeldByCurrentThread() && lock != null) {
@@ -147,7 +141,7 @@ public class VideoDeliverConsumer {
     videoDocument.setTitle(videoDelivery.getVideo().getTitle());
     videoDocument.setTypeId(videoDelivery.getVideo().getTypeId());
     videoDocument.setUrl(videoDelivery.getVideo().getUrl());
-    videoDocument.setPlayCount(0);
+    videoDocument.setPlayCount(0L);
     videoDocument.setCreateTime(new Date());
     videoDocument.setUserId(videoDelivery.getVideo().getUserId());
     videoDocument.setAuthorName(videoDelivery.getVideo().getAuthorName());

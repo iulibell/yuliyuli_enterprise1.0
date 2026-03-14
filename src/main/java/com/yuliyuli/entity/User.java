@@ -15,7 +15,6 @@ public class User {
   @TableId(type = IdType.AUTO)
   private Long id;
 
-  @NotBlank(message = "用户名不能为空")
   @Size(min = 2, max = 50, message = "用户名长度必须在2到20之间")
   @Parameter(name = "用户名")
   private String username;
@@ -25,7 +24,7 @@ public class User {
 
   @Parameter(name = "账号")
   @NotBlank(message = "账号不能为空")
-  @Size(min = 10, max = 10, message = "账号长度必须为10位")
+  @Size(min = 11, max = 11, message = "账号长度必须为11位")
   // b站手机号和账号是共用的，所以这里用phone表示
   private String phone;
 

@@ -19,6 +19,7 @@ import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 /**
@@ -80,9 +81,6 @@ public class UserController {
     log.info("手机号：{}", existPhone.getPhone());
     try {
       String message = userService.getCode(phone);
-      if (message == null) {
-        return Result.fail("验证码不能为空!");
-      }
       log.info("验证码发送成功");
       return Result.success(message);
     } catch (Exception e) {
@@ -101,13 +99,22 @@ public class UserController {
   @Operation(summary = "注册模块")
   @PostMapping("/register")
   public Result<Object> register(
-      @Parameter(description = "注册参数（账号+验证码+密码）", required = true) @Validated @RequestBody
+      @Parameter(description = "注册参数（账号+密码）", required = true) @Validated @RequestBody
           User registerDto,
-      @Parameter(description = "校验参数（验证码）", required = true) String code) {
+      @Parameter(description = "校验参数（验证码）", required = true) @RequestParam String code) {
     try {
       String message = userService.register(registerDto.getPhone(), code, registerDto.getPassword());
       if (message == null) {
         return Result.fail("验证码错误!");
+      }
+      if (message.equals("请输入有效的11位手机号")) {
+        return Result.fail(message);
+      }
+      if (message.equals("密码长度必须大于等于6位且小于等于12位")) {
+        return Result.fail(message);
+      }
+      if (message.equals("手机号、验证码、密码不能为空")) {
+        return Result.fail(message);
       }
       return Result.success(message);
     } catch (Exception e) {

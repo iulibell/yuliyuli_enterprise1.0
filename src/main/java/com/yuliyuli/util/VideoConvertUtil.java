@@ -116,4 +116,12 @@ public class VideoConvertUtil {
             })
         .collect(Collectors.toList());
   }
+
+
+  /** 辅助方法：转换为视频VO分页对象 */
+  public static Page<VideoVO> convertToVOPage(List<Video> videoList, int pageNum, int pageSize) {
+    Page<Video> page = new Page<>(pageNum, pageSize);
+    page.setRecords(videoList);
+    return VideoConvertUtil.converPageToVideoVOList(page);
+  }
 }

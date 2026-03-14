@@ -10,12 +10,14 @@ public class WebConfig implements WebMvcConfigurer {
 
   private static final String[] EXCLUDE_PATH_PATTERNS = {
     // 1. 用户模块公开接口（登录/注册）
-    "/user/login",
-    "/user/register",
+    "/api/user/login",
+    "/api/user/register",
+    "/api/user/logout",
+    "/api/user/getCode",
     // 2. 视频/评论模块公开接口
-    "/video/list",
-    "/video/detail",
-    "/comment/list",
+    "/api/video/list",
+    "/api/video/detail",
+    "/api/comment/list",
     // 3. Knife4j接口文档路径（开发环境必备）
     "/doc.html",
     "/webjars/**",

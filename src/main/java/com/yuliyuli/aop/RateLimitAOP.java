@@ -1,6 +1,7 @@
 package com.yuliyuli.aop;
 
 import com.yuliyuli.annotation.RateLimit;
+import com.yuliyuli.common.Result;
 import com.yuliyuli.util.RateLimiterUtil;
 import jakarta.annotation.Resource;
 import org.aspectj.lang.ProceedingJoinPoint;
@@ -26,7 +27,7 @@ public class RateLimitAOP {
     }
 
     if (!rateLimiterUtil.rateLimit(key, rateLimit.limit(), rateLimit.window())) {
-      throw new RuntimeException("请求过于频繁，请稍后再试");
+      return Result.fail("请求过于频繁，请稍后再试");
     }
 
     return joinPoint.proceed();

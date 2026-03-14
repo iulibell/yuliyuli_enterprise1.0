@@ -38,8 +38,8 @@ public class RateLimiterUtil {
         redisTemplate.execute(
             redisScript,
             Collections.singletonList(key),
-            String.valueOf(limit),
-            String.valueOf(window));
+            limit,
+            window);
 
     return result != null && result == 1;
   }

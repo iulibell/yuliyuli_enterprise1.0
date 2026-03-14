@@ -32,7 +32,11 @@ public class LoginInterceptor implements HandlerInterceptor {
   public boolean preHandle(HttpServletRequest request, HttpServletResponse response, Object handler)
       throws Exception {
     try {
-      String token = request.getHeader("token");
+      String authorization = request.getHeader("Authorization");
+      String token = null;
+      if (authorization != null && authorization.startsWith("Bearer ")) {
+        token = authorization.substring(7);
+      }
       log.info("【登录拦截器】校验请求Token,请求路径:{},Token:{}", request.getRequestURI(), token);
       if (token == null || !jwtUtil.validateToken(token)) {
         return handleError(response, Result.fail(401, "Token校验失败,请重新登录"));

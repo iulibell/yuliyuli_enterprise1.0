@@ -22,7 +22,7 @@ public class VideoDocument {
   private String title;
 
   // 作者Id，用于点击作者名字后进行作者主页跳转
-  @Field(type = FieldType.Integer)
+  @Field(type = FieldType.Long)
   private Long userId;
 
   @Field(type = FieldType.Text)
@@ -40,8 +40,8 @@ public class VideoDocument {
   @Field(type = FieldType.Integer)
   private Integer typeId;
 
-  @Field(type = FieldType.Integer)
-  private Integer playCount;
+  @Field(type = FieldType.Long)
+  private Long playCount;
 
   @Field(type = FieldType.Date)
   private Date createTime;

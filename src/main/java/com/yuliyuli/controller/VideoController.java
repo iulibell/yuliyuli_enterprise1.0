@@ -6,6 +6,7 @@ import com.yuliyuli.common.Result;
 import com.yuliyuli.entity.Comment;
 import com.yuliyuli.entity.User;
 import com.yuliyuli.entity.UserHolder;
+import com.yuliyuli.entity.Video;
 import com.yuliyuli.entity.VideoCollection;
 import com.yuliyuli.entity.VideoDelivery;
 import com.yuliyuli.entity.VideoLike;
@@ -34,6 +35,7 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.multipart.MultipartFile;
 
 /**
  * 视频模块
@@ -58,11 +60,12 @@ public class VideoController {
   @Resource private RedisTemplate<String, Object> redisTemplate;
 
   // 检查用户是否登录
-  private void checkLogin() {
+  private boolean checkLogin() {
     User user = UserHolder.getUser();
     if (user == null) {
-      throw new GlobalExceptionHandler.BusinessException("请完成登录");
+      return false;
     }
+    return true;
   }
 
   /**
@@ -71,16 +74,35 @@ public class VideoController {
    * @param video
    * @return 处理结果
    */
-  @RateLimit(limit = 10, window = 60, key = "delivery")
   @PostMapping("/delivery")
   @Operation(summary = "视频投递")
   public Result<Object> deliveryVideo(
-      @Parameter(description = "传递的视频对象", required = true) @Validated @RequestBody
-          VideoDelivery video) {
-    checkLogin();
+      @RequestParam("file") MultipartFile file,
+      @RequestParam("video.title") String title,
+      @RequestParam("video.type") String type,
+      @RequestParam(value = "video.cover", required = false) MultipartFile cover) {
+    if (!checkLogin()) {
+      return Result.fail("请完成登录");
+    }
     try {
-      String message = videoService.videoDeliver(video);
-      log.info("视频投递成功,视频ID:{}", video.getVideo().getUrl());
+      // 从登录用户获取userId
+      User currentUser = UserHolder.getUser();
+      if (currentUser == null) {
+        return Result.fail("请完成登录");
+      }
+      
+      VideoDelivery videoDelivery = new VideoDelivery();
+      videoDelivery.setVideoFile(file);
+      videoDelivery.setCoverFile(cover);
+      
+      Video video = new Video();
+      video.setTitle(title);
+      video.setTypeId(Integer.parseInt(type));
+      video.setUserId(currentUser.getId());
+      videoDelivery.setVideo(video);
+      
+      String message = videoService.videoDeliver(videoDelivery);
+      log.info("视频投递成功,视频标题:{}", title);
       return Result.success(message);
     } catch (Exception e) {
       log.error("视频投递失败", e);

@@ -223,6 +223,39 @@ public class ProcessDelay {
     }
   }
 
+  @Scheduled(fixedRate = 5000) // 每5秒检查一次
+  @Async
+  protected void processFollow(){
+    try {
+    String delayKey = "follow:delay";
+    long currentTime = System.currentTimeMillis();
+    RScoredSortedSet<Map<String, Object>> sortedSet = redissonClient.getScoredSortedSet(delayKey);
+    Collection<Map<String, Object>> expiredVideoUrls =
+        sortedSet.entryRange(0, true, currentTime, true).stream()
+            .map(entry -> entry.getValue())
+            .collect(Collectors.toList());
+    // 遍历处理每个到期的 videoUrl
+    for (Map<String, Object> map : expiredVideoUrls) {
+        processFollow(map);
+        sortedSet.remove(map);
+      }
+    } catch (Exception e) {
+      log.error("处理延时关注失败: {}", e);
+    }
+  }
+
+  private void processFollow(Map<String, Object> map) {
+    // 从map中获取userId和followUserId
+    String fanUserId = map.get("fanUserId").toString();
+    String followUserId = map.get("followUserId").toString();
+    try {
+      // 执行关注操作
+      followMapper.followUser(Long.parseLong(followUserId), Long.parseLong(fanUserId));
+    } catch (Exception e) {
+      log.error("处理延时关注失败: {}", map, e);
+    }
+  }
+
   private void processPlayCountToES(String videoUrl) {
     if (videoUrl == null) {
       return;
@@ -262,39 +295,6 @@ public class ProcessDelay {
       elasticsearchOperations.update(updateQuery, IndexCoordinates.of("video"));
     } catch (Exception e) {
       log.error("处理延时视频删除同步到ES失败: {}", videoUrl, e);
-    }
-  }
-
-  @Scheduled(fixedRate = 5000) // 每5秒检查一次
-  @Async
-  private void processFollow(){
-    try {
-    String delayKey = "follow:delay";
-    long currentTime = System.currentTimeMillis();
-    RScoredSortedSet<Map<String, Object>> sortedSet = redissonClient.getScoredSortedSet(delayKey);
-    Collection<Map<String, Object>> expiredVideoUrls =
-        sortedSet.entryRange(0, true, currentTime, true).stream()
-            .map(entry -> entry.getValue())
-            .collect(Collectors.toList());
-    // 遍历处理每个到期的 videoUrl
-    for (Map<String, Object> map : expiredVideoUrls) {
-        processFollow(map);
-        sortedSet.remove(map);
-      }
-    } catch (Exception e) {
-      log.error("处理延时关注失败: {}", e);
-    }
-  }
-
-  private void processFollow(Map<String, Object> map) {
-    // 从map中获取userId和followUserId
-    String fanUserId = map.get("fanUserId").toString();
-    String followUserId = map.get("followUserId").toString();
-    try {
-      // 执行关注操作
-      followMapper.followUser(Long.parseLong(followUserId), Long.parseLong(fanUserId));
-    } catch (Exception e) {
-      log.error("处理延时关注失败: {}", map, e);
     }
   }
 }
